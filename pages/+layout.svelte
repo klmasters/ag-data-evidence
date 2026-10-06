@@ -12,7 +12,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link
-		href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap"
+		href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500;600&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
@@ -45,8 +45,7 @@
 		--km-bark: #2e4d31;
 		--km-rust: #e8843e;
 
-		/* Same fonts as the portfolio: serif headings, sans body, mono labels. */
-		--km-serif: 'Playfair Display', Georgia, serif;
+		/* Portfolio fonts: DM Sans for text and headings, DM Mono for labels. */
 		--km-sans: 'DM Sans', system-ui, sans-serif;
 		--km-mono: 'DM Mono', ui-monospace, monospace;
 
@@ -65,7 +64,8 @@
 	:global(body h1.markdown),
 	:global(body h2.markdown),
 	:global(body h3.markdown) {
-		font-family: var(--km-serif);
+		font-family: var(--km-sans);
+		font-weight: 600;
 	}
 	:global(thead th) {
 		font-family: var(--km-mono);
