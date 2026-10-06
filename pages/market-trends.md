@@ -2,7 +2,7 @@
 title: Market Trends
 ---
 
-Weekly Kansas auction prices for feeder cattle, from the USDA Kansas Weekly Cattle Auction Summary (report 1895).
+Weekly Kansas auction prices for feeder cattle, from the USDA Kansas Weekly Cattle Auction Summary (report 1895). Prices are quoted per cwt (hundredweight), which means per 100 pounds of live weight.
 
 <Dropdown name=class defaultValue="Steers" title="Class">
   <DropdownOption value="Steers" />
@@ -51,11 +51,13 @@ left join picked yr on yr.week = cur.week - interval 364 day
 
 ## Latest week: 500-600 lb {inputs.class.value}
 
-<BigValue data={latest} value=price fmt='$#,##0.00' title="Price per cwt" />
-<BigValue data={latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
-<BigValue data={latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. year ago" />
+Week of <Value data={latest} column=week fmt='mmm d, yyyy' />
 
-Week of <Value data={latest} column=week fmt='mmm d, yyyy' />.
+<KMStats>
+  <BigValue data={latest} value=price fmt='$#,##0.00' title="Price per cwt (100 lb)" />
+  <BigValue data={latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. year ago" />
+</KMStats>
 
 ## Price by weight class
 
@@ -72,11 +74,11 @@ order by week, weight_class
   y=avg_price
   series=weight_class
   yFmt='$#,##0'
-  yAxisTitle="$ per cwt"
+  yAxisTitle="$ per cwt (100 lb)"
   colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
 />
 
-Prices are head-weighted averages across all auction lines in each weight class, Per Cwt, excluding special lots (fancy, unweaned, thin-fleshed). Lighter calves bring a higher price per cwt, so the lines sit in weight order.
+Prices are head-weighted averages across all auction lines in each weight class, priced per cwt, excluding special lots (fancy, unweaned, thin-fleshed). Lighter calves bring a higher price per cwt, so the lines sit in weight order.
 
 ## Seasonal comparison: 500-600 lb {inputs.class.value}
 
@@ -106,7 +108,7 @@ order by yr, week_of_year
   xFmt='0'
   xAxisTitle="Week of year (1 = first week of January)"
   yFmt='$#,##0'
-  yAxisTitle="$ per cwt"
+  yAxisTitle="$ per cwt (100 lb)"
   colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
 />
 
@@ -157,9 +159,11 @@ order by week desc
 limit 1
 ```
 
-<BigValue data={volume_latest} value=receipts fmt='#,##0' title="Head sold, latest week" />
-<BigValue data={volume_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
-<BigValue data={volume_latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. same week last year" />
+<KMStats>
+  <BigValue data={volume_latest} value=receipts fmt='#,##0' title="Head sold, latest week" />
+  <BigValue data={volume_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={volume_latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. same week last year" />
+</KMStats>
 
 ```sql volume_trend
 select week, 'This year' as period, receipts as head_sold
@@ -188,5 +192,5 @@ The grey line is the same calendar week one year earlier, as reported by USDA in
 <DataTable data={price_trend} rows=12 search=true>
   <Column id=week fmt='yyyy-mm-dd' />
   <Column id=weight_class />
-  <Column id=avg_price fmt='$#,##0.00' title="$ per cwt" />
+  <Column id=avg_price fmt='$#,##0.00' title="$ per cwt (100 lb)" />
 </DataTable>
