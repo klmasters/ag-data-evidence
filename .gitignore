@@ -9,3 +9,6 @@ static/data
 .env
 .evidence/meta
 .evidence/customization/.profile.json
+
+# Local scratch page for checking source data (not deployed)
+pages/data-check.md
