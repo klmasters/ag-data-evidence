@@ -12,7 +12,7 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link
-		href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap"
 		rel="stylesheet"
 	/>
 </svelte:head>
@@ -44,6 +44,31 @@
 		--km-leather: #3d6642;
 		--km-bark: #2e4d31;
 		--km-rust: #e8843e;
+
+		/* Same fonts as the portfolio: serif headings, sans body, mono labels. */
+		--km-serif: 'Playfair Display', Georgia, serif;
+		--km-sans: 'DM Sans', system-ui, sans-serif;
+		--km-mono: 'DM Mono', ui-monospace, monospace;
+
+		/* Evidence's own components (tables, inputs, query viewer) read these variables. */
+		--ui-font-family: var(--km-sans);
+		--ui-font-family-compact: var(--km-sans);
+		--monospace-font-family: var(--km-mono);
+	}
+
+	/* Evidence puts Tailwind's font-sans on the page text and headings. */
+	:global(body),
+	:global(.font-sans) {
+		font-family: var(--km-sans);
+	}
+	/* "body" in front raises specificity so this wins over Evidence's heading rule. */
+	:global(body h1.markdown),
+	:global(body h2.markdown),
+	:global(body h3.markdown) {
+		font-family: var(--km-serif);
+	}
+	:global(thead th) {
+		font-family: var(--km-mono);
 	}
 
 	/* The bar is fixed, like the portfolio nav. Evidence's own header, desktop sidebar and
