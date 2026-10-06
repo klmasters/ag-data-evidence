@@ -1,0 +1,27 @@
+[build]
+  # "sources" queries Neon and refreshes the data; "build" then makes the static site.
+  # A rebuild is therefore all it takes to pick up the latest weekly load.
+  command = "npm run sources && npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Database login: set these in Netlify (Site configuration > Environment variables),
+# never in this file. Host, database, schema and SSL settings come from
+# sources/supabase_ag_pipeline/connection.yaml.
+#   EVIDENCE_SOURCE__supabase_ag_pipeline__user
+#   EVIDENCE_SOURCE__supabase_ag_pipeline__password
+
+# Evidence writes every URL with the /ag-data/ prefix (basePath in evidence.config.yaml),
+# but the built files sit at the root of the publish folder. Serve /ag-data/x from /x.
+[[redirects]]
+  from = "/ag-data/*"
+  to = "/:splat"
+  status = 200
+
+# Visiting the bare Netlify address sends people to the site's real home.
+[[redirects]]
+  from = "/"
+  to = "/ag-data/"
+  status = 302
