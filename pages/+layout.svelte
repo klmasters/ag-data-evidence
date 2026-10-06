@@ -87,6 +87,22 @@
 		top: calc(5rem + var(--km-bar)) !important;
 	}
 
+	/* On desktop Evidence's header only repeats the site title (the sidebar is always visible),
+	   so it is hidden there. It stays on phones: it holds the button that opens the sidebar.
+	   768px is where Evidence switches to the always-visible sidebar. With the header gone,
+	   the content, sidebar and table of contents all start just below the KM bar. */
+	@media (min-width: 768px) {
+		:global(header.fixed) {
+			display: none !important;
+		}
+		:global(main.flex-grow) {
+			margin-top: 2rem !important;
+		}
+		:global(.fixed.top-20) {
+			top: calc(2rem + var(--km-bar)) !important;
+		}
+	}
+
 	.km-bar {
 		position: fixed;
 		top: 0;
