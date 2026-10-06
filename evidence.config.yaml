@@ -1,3 +1,7 @@
+deployment:
+  # The site is served at kennanmasters.com/ag-data/, so every URL needs this prefix.
+  basePath: /ag-data
+
 appearance:
   default: system
   switcher: true
