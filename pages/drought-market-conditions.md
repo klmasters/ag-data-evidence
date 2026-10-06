@@ -82,3 +82,130 @@ order by week
   yMax=1
   yAxisTitle="Share of Kansas"
 />
+
+## Drought next to the markets
+
+Drought is only one of many things that move cattle and hay markets. These charts share a time axis so you can compare them, but a pattern across charts is not proof of cause. Hay prices start in July 2020.
+
+```sql market_weeks
+select week
+from ${drought_weeks}
+where week >= date '2020-07-20'
+```
+
+<DateRange
+  name=market_range
+  data={market_weeks}
+  dates=week
+  title="Date range"
+  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
+  defaultValue="All Time"
+/>
+
+```sql severe_drought
+select
+  cast(map_date as date) as week,
+  d2_pct / 100 as severe_share
+from supabase_ag_pipeline.raw_usdm_kansas
+where cast(map_date as date) between '${inputs.market_range.start}' and '${inputs.market_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={severe_drought}
+  x=week
+  y=severe_share
+  title="Share of Kansas in severe drought (D2 or worse)"
+  yFmt='0%'
+  yMin=0
+  yMax=1
+  colorPalette={['#d97706']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+```sql hay_price
+select
+  cast(report_begin_date as date) as week,
+  sum(wtd_avg_price * quantity) / sum(quantity) as price
+from supabase_ag_pipeline.raw_mmn_2885_details
+where class = 'Alfalfa'
+  and quality = 'Good'
+  and package = 'Large Square 3x4'
+  and price_unit = 'Per Ton'
+  and sale_type in ('Trade', 'Contract (Trade)')
+  and quantity > 0
+  and wtd_avg_price is not null
+  and cast(report_begin_date as date) between '${inputs.market_range.start}' and '${inputs.market_range.end}'
+group by 1
+order by 1
+```
+
+<KMLineChart
+  data={hay_price}
+  x=week
+  y=price
+  title="Alfalfa hay price, $ per ton (Good quality, large square bales)"
+  yFmt='$#,##0'
+  colorPalette={['#2f7d3c']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+```sql steer_price
+select
+  cast(report_begin_date as date) as week,
+  sum(avg_price * head_count) / sum(head_count) as price
+from supabase_ag_pipeline.raw_mmn_1895
+where commodity = 'Feeder Cattle'
+  and class = 'Steers'
+  and price_unit = 'Per Cwt'
+  and lot_desc = 'None'
+  and avg_weight >= 500
+  and avg_weight < 600
+  and cast(report_begin_date as date) between '${inputs.market_range.start}' and '${inputs.market_range.end}'
+group by 1
+having sum(head_count) > 0
+order by 1
+```
+
+<KMLineChart
+  data={steer_price}
+  x=week
+  y=price
+  title="500-600 lb steer price, $ per cwt (100 lb)"
+  yFmt='$#,##0'
+  colorPalette={['#3f8fc4']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+```sql auction_volume
+-- The average is taken over the whole history first and filtered to the date range afterwards,
+-- so the first weeks of a chosen range still average a full eight weeks.
+with weekly as (
+  select cast(report_begin_date as date) as week, max(receipts) as head_sold
+  from supabase_ag_pipeline.raw_mmn_1895
+  where commodity = 'Feeder Cattle' and receipts is not null
+  group by 1
+),
+smoothed as (
+  select week, avg(head_sold) over (order by week rows between 7 preceding and current row) as head_avg
+  from weekly
+)
+select week, head_avg
+from smoothed
+where week between '${inputs.market_range.start}' and '${inputs.market_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={auction_volume}
+  x=week
+  y=head_avg
+  title="Feeder cattle sold at Kansas auctions, head per week (8-week average)"
+  yFmt='#,##0'
+  colorPalette={['#8f3d56']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
