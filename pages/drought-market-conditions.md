@@ -209,3 +209,75 @@ order by week
   chartAreaHeight={150}
   connectGroup="markets"
 />
+
+## Year by year
+
+Yearly averages of the measures above. Prices and volume are averages of the weekly figures. 2020 starts in July and 2026 ends in September, so those two years cover fewer weeks.
+
+```sql yearly_summary
+with drought as (
+  select
+    year(cast(map_date as date)) as yr,
+    avg(d1_pct) / 100 as in_drought,
+    avg(d2_pct) / 100 as severe_drought
+  from supabase_ag_pipeline.raw_usdm_kansas
+  where cast(map_date as date) >= date '2020-07-20'
+  group by 1
+),
+hay_weekly as (
+  select
+    cast(report_begin_date as date) as week,
+    sum(wtd_avg_price * quantity) / sum(quantity) as price
+  from supabase_ag_pipeline.raw_mmn_2885_details
+  where class = 'Alfalfa' and quality = 'Good' and package = 'Large Square 3x4'
+    and price_unit = 'Per Ton' and sale_type in ('Trade', 'Contract (Trade)')
+    and quantity > 0 and wtd_avg_price is not null
+  group by 1
+),
+hay as (
+  select year(week) as yr, avg(price) as hay_price from hay_weekly where week >= date '2020-07-20' group by 1
+),
+steer_weekly as (
+  select
+    cast(report_begin_date as date) as week,
+    sum(avg_price * head_count) / sum(head_count) as price
+  from supabase_ag_pipeline.raw_mmn_1895
+  where commodity = 'Feeder Cattle' and class = 'Steers' and price_unit = 'Per Cwt'
+    and lot_desc = 'None' and avg_weight >= 500 and avg_weight < 600
+  group by 1
+  having sum(head_count) > 0
+),
+steer as (
+  select year(week) as yr, avg(price) as steer_price from steer_weekly where week >= date '2020-07-20' group by 1
+),
+volume_weekly as (
+  select cast(report_begin_date as date) as week, max(receipts) as head_sold
+  from supabase_ag_pipeline.raw_mmn_1895
+  where commodity = 'Feeder Cattle' and receipts is not null
+  group by 1
+),
+volume as (
+  select year(week) as yr, avg(head_sold) as head_per_week from volume_weekly where week >= date '2020-07-20' group by 1
+)
+select
+  cast(drought.yr as varchar) as year,
+  drought.in_drought,
+  drought.severe_drought,
+  hay.hay_price,
+  steer.steer_price,
+  volume.head_per_week
+from drought
+left join hay using (yr)
+left join steer using (yr)
+left join volume using (yr)
+order by drought.yr
+```
+
+<DataTable data={yearly_summary} rows=10>
+  <Column id=year title="Year" />
+  <Column id=in_drought title="In drought (D1+)" fmt='0%' />
+  <Column id=severe_drought title="Severe drought (D2+)" fmt='0%' />
+  <Column id=hay_price title="Alfalfa hay, $ per ton" fmt='$#,##0' />
+  <Column id=steer_price title="500-600 lb steers, $ per cwt" fmt='$#,##0' />
+  <Column id=head_per_week title="Feeder cattle sold, head per week" fmt='#,##0' />
+</DataTable>
