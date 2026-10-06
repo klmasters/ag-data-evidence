@@ -22,7 +22,7 @@
 	<a href="{MAIN_SITE}/" class="km-logo">KM</a>
 	<ul class="km-links">
 		<li><a href="{MAIN_SITE}/">Home</a></li>
-		<li><a href="/ag-data/" class="active" aria-current="page">Cattle Data</a></li>
+		<li><a href="{MAIN_SITE}/#work" class="active">Projects</a></li>
 		<li><a href="{MAIN_SITE}/contact.html">Contact</a></li>
 	</ul>
 </nav>
@@ -40,7 +40,8 @@
 
 <style>
 	:global(:root) {
-		--km-bar: 44px;
+		/* Same height as the portfolio nav: 2 x 1.25rem padding + a 1.7rem line + 1px border. */
+		--km-bar: calc(2.5rem + 1.7rem + 1px);
 		--km-leather: #3d6642;
 		--km-bark: #2e4d31;
 		--km-rust: #e8843e;
@@ -115,7 +116,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 0 3rem;
-		background: rgba(250, 249, 244, 0.92);
+		background: rgba(250, 249, 244, 0.88);
 		backdrop-filter: blur(12px);
 		border-bottom: 1px solid rgba(61, 102, 66, 0.15);
 	}
@@ -154,6 +155,9 @@
 	}
 
 	@media (max-width: 900px) {
+		:global(:root) {
+			--km-bar: calc(2rem + 1.7rem + 1px);
+		}
 		.km-bar {
 			padding: 0 1.5rem;
 		}
