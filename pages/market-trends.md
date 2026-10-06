@@ -66,7 +66,7 @@ where class = '${inputs.class.value}'
 order by week, weight_class
 ```
 
-<LineChart
+<KMLineChart
   data={price_trend}
   x=week
   y=avg_price
@@ -74,7 +74,6 @@ order by week, weight_class
   yFmt='$#,##0'
   yAxisTitle="$ per cwt"
   colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
-  echartsOptions={{ animation: false }}
 />
 
 Prices are head-weighted averages across all auction lines in each weight class, Per Cwt, excluding special lots (fancy, unweaned, thin-fleshed). Lighter calves bring a higher price per cwt, so the lines sit in weight order.
@@ -98,7 +97,7 @@ group by 1, 2
 order by yr, week_of_year
 ```
 
-<LineChart
+<KMLineChart
   data={seasonal}
   x=week_of_year
   y=avg_price
@@ -109,7 +108,6 @@ order by yr, week_of_year
   yFmt='$#,##0'
   yAxisTitle="$ per cwt"
   colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
-  echartsOptions={{ animation: false }}
 />
 
 ## Heifer discount to steers: 500-600 lb
@@ -124,14 +122,13 @@ where s.class = 'Steers' and h.class = 'Heifers' and s.weight_lo = 500
 order by s.week
 ```
 
-<LineChart
+<KMLineChart
   data={heifer_spread}
   x=week
   y=heifer_vs_steer
   yFmt='0.0%'
   yAxisTitle="Heifer price vs. steer price"
   colorPalette={['#2f7d3c']}
-  echartsOptions={{ animation: false }}
 />
 
 ## Auction volume: feeder cattle
@@ -175,14 +172,13 @@ where week > (select max(week) from ${volume}) - interval 364 day
 order by week
 ```
 
-<LineChart
+<KMLineChart
   data={volume_trend}
   x=week
   y=head_sold
   series=period
   yAxisTitle="Head sold"
   seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
-  echartsOptions={{ animation: false }}
 />
 
 The grey line is the same calendar week one year earlier, as reported by USDA in the same report, so the two lines line up week for week.
