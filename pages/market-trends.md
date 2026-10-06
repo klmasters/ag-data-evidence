@@ -112,10 +112,10 @@ order by yr, week_of_year
 
 ## Heifer discount to steers: 500-600 lb
 
-Heifers usually sell below steers of the same weight. A narrowing gap often shows up when producers are keeping heifers back to rebuild the herd. This chart ignores the Class selector above.
+Heifers usually sell for less than steers of the same weight. This is how much less, as a percent of the steer price. A shrinking discount often shows up when producers are keeping heifers back to rebuild the herd. This chart ignores the Class selector above.
 
 ```sql heifer_spread
-select s.week, h.avg_price / s.avg_price - 1 as heifer_vs_steer
+select s.week, 1 - h.avg_price / s.avg_price as heifer_discount
 from ${weekly} s
 join ${weekly} h on h.week = s.week and h.weight_lo = s.weight_lo
 where s.class = 'Steers' and h.class = 'Heifers' and s.weight_lo = 500
@@ -125,9 +125,9 @@ order by s.week
 <KMLineChart
   data={heifer_spread}
   x=week
-  y=heifer_vs_steer
-  yFmt='0.0%'
-  yAxisTitle="Heifer price vs. steer price"
+  y=heifer_discount
+  yFmt='0%'
+  yAxisTitle="Heifer discount to steers"
   colorPalette={['#2f7d3c']}
 />
 
