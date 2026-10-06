@@ -73,7 +73,7 @@ order by week, weight_class
   series=weight_class
   yFmt='$#,##0'
   yAxisTitle="$ per cwt"
-  colorPalette={['#2a78d6', '#eb6834', '#1baf7a', '#eda100']}
+  colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
   echartsOptions={{ animation: false }}
 />
 
@@ -108,7 +108,7 @@ order by yr, week_of_year
   xAxisTitle="Week of year (1 = first week of January)"
   yFmt='$#,##0'
   yAxisTitle="$ per cwt"
-  colorPalette={['#a9c5e8', '#7ba6dc', '#4f89cf', '#2a78d6', '#123f7c']}
+  colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
   echartsOptions={{ animation: false }}
 />
 
@@ -130,7 +130,7 @@ order by s.week
   y=heifer_vs_steer
   yFmt='0.0%'
   yAxisTitle="Heifer price vs. steer price"
-  colorPalette={['#2a78d6']}
+  colorPalette={['#2f7d3c']}
   echartsOptions={{ animation: false }}
 />
 
@@ -181,7 +181,7 @@ order by week
   y=head_sold
   series=period
   yAxisTitle="Head sold"
-  seriesColors={{ 'This year': '#2a78d6', 'Same week last year': '#8a8f98' }}
+  seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
   echartsOptions={{ animation: false }}
 />
 
