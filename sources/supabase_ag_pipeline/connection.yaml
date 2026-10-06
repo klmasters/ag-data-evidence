@@ -1,0 +1,15 @@
+# This file was automatically generated
+type: postgres
+name: supabase_ag_pipeline
+options:
+  database: neondb
+  host: ep-raspy-lake-b57atk5r.c-7.us-east-2.aws.neon.tech
+  port: 5432
+  schema: ag_data
+  ssl:
+    rejectUnauthorized: true
+    sslmode: require
+  _ssl: true
+# Advanced Options, you probably don't want to change this
+buildOptions:
+  batchSize: 1000000
