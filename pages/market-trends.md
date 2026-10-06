@@ -61,6 +61,8 @@ Week of <Value data={latest} column=week fmt='mmm d, yyyy' />
 
 ## Price by weight class
 
+Average auction price for each weight class, weighted by how many head sold. Lighter calves bring more per cwt. Special lots (fancy, unweaned, thin-fleshed) are left out.
+
 ```sql price_trend
 select week, weight_class, avg_price
 from ${weekly}
@@ -78,11 +80,9 @@ order by week, weight_class
   colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
 />
 
-Prices are head-weighted averages across all auction lines in each weight class, priced per cwt, excluding special lots (fancy, unweaned, thin-fleshed). Lighter calves bring a higher price per cwt, so the lines sit in weight order.
-
 ## Seasonal comparison: 500-600 lb {inputs.class.value}
 
-Each line is one year, so you can see whether this year is running ahead of or behind a normal year at the same point in the calendar.
+This chart shows one line per year, with the current year being the darkest.
 
 ```sql seasonal
 select
@@ -114,7 +114,7 @@ order by yr, week_of_year
 
 ## Heifer discount to steers: 500-600 lb
 
-Heifers usually sell for less than steers of the same weight. This is how much less, as a percent of the steer price. A shrinking discount often shows up when producers are keeping heifers back to rebuild the herd. This chart ignores the Class selector above.
+Heifers usually sell for less than steers of the same weight. A shrinking discount often shows up when producers are keeping heifers back to rebuild their herd. This chart ignores the Class selector above.
 
 ```sql heifer_spread
 select s.week, 1 - h.avg_price / s.avg_price as heifer_discount
@@ -129,13 +129,13 @@ order by s.week
   x=week
   y=heifer_discount
   yFmt='0%'
-  yAxisTitle="Heifer discount to steers"
+  yAxisTitle="Heifer discount (% below steers)"
   colorPalette={['#2f7d3c']}
 />
 
 ## Auction volume: feeder cattle
 
-"Receipts" is the total number of head of feeder cattle sold across the reporting Kansas auctions that week. Slaughter and replacement cattle are reported separately and are not included here.
+This chart shows the total number of head of feeder cattle sold across the reporting Kansas auctions that week. Slaughter and replacement cattle are reported separately and are not included here.
 
 ```sql volume
 select
@@ -184,8 +184,6 @@ order by week
   yAxisTitle="Head sold"
   seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
 />
-
-The grey line is the same calendar week one year earlier, as reported by USDA in the same report, so the two lines line up week for week.
 
 ## Data table
 
