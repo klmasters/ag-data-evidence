@@ -1,0 +1,1 @@
+select * from ag_data.raw_mmn_1895
