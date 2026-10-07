@@ -19,9 +19,3 @@
   from = "/ag-data/*"
   to = "/:splat"
   status = 200
-
-# Visiting the bare Netlify address sends people to the site's real home.
-[[redirects]]
-  from = "/"
-  to = "/ag-data/"
-  status = 302
