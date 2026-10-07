@@ -43,6 +43,62 @@ Kansas auction prices, from the weekly auction summary. Week of <Value data={ste
 
 [See the full price history on Market Trends](/market-trends)
 
+```sql direct_latest
+-- Same rules as the Direct vs. Auction page. Each direct week (a Monday) is paired with the
+-- auction week that began in the seven days up to it.
+with auction as (
+  select
+    cast(report_begin_date as date) as week,
+    sum(avg_price * head_count) / sum(head_count) as price
+  from supabase_ag_pipeline.raw_mmn_1895
+  where commodity = 'Feeder Cattle'
+    and class = 'Steers'
+    and price_unit = 'Per Cwt'
+    and lot_desc = 'None'
+    and avg_weight >= 800
+    and avg_weight < 900
+    and head_count > 0
+  group by 1
+),
+direct as (
+  select
+    cast(report_begin_date as date) as week,
+    sum(wtd_avg_price * head_count) / sum(head_count) as price
+  from supabase_ag_pipeline.raw_mmn_3097_details
+  where commodity = 'Feeder Cattle'
+    and class = 'Steers'
+    and price_unit = 'Per Cwt'
+    and lot_desc = 'None'
+    and purchase_type = 'Cash'
+    and delivery_month = 'Current'
+    and wtd_avg_wt >= 800
+    and wtd_avg_wt < 900
+    and head_count > 0
+  group by 1
+)
+select
+  auction.week,
+  auction.price as auction_price,
+  direct.price as direct_price,
+  direct.price - auction.price as difference
+from auction
+join direct on direct.week between auction.week and auction.week + interval 6 day
+order by auction.week desc
+limit 1
+```
+
+## Direct cattle sales
+
+Cattle sold directly, without an auction, from the Kansas Direct Cattle report. The comparison is for 800-900 lb steers, where the two kinds of sale overlap most. Auction week of <Value data={direct_latest} column=week fmt='mmm d, yyyy' />
+
+<KMStats>
+  <BigValue data={direct_latest} value=auction_price fmt='$#,##0.00' title="Auction, $ per cwt" />
+  <BigValue data={direct_latest} value=direct_price fmt='$#,##0.00' title="Direct, $ per cwt" />
+  <BigValue data={direct_latest} value=difference fmt='+$#,##0.00;-$#,##0.00' title="Direct minus auction" />
+</KMStats>
+
+[Compare direct and auction prices by class and weight](/direct-vs-auction)
+
 ```sql hay_latest
 with weekly as (
   select
@@ -76,6 +132,8 @@ Kansas direct hay sales. Hay is reported weekly or every other week, so the comp
   <BigValue data={hay_latest} value=price fmt='$#,##0' title="Alfalfa, Good, $ per ton" />
   <BigValue data={hay_latest} value=change fmt='+0.0%;-0.0%' title="vs. previous report" />
 </KMStats>
+
+[See what hay costs against the value of weight gain on Backgrounding Economics](/backgrounding-economics)
 
 ```sql drought_latest
 with d as (
