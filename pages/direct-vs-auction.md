@@ -98,3 +98,85 @@ Auction week of <Value data={latest} column=week fmt='mmm d, yyyy' />, the most 
   <BigValue data={latest} value=auction_head fmt='#,##0' title="Head sold at auction" />
   <BigValue data={latest} value=direct_head fmt='#,##0' title="Head sold direct" />
 </KMStats>
+
+## Prices over time
+
+Each point is one week. Weeks with no direct sales in this class and weight are left out. The lower chart shows how far direct is from auction, smoothed as the average of the last four weeks, because a single week can swing when few head sold.
+
+```sql price_weeks
+select week
+from ${weekly}
+where class = '${inputs.class.value}'
+  and weight_lo = ${inputs.weight_lo.value}
+```
+
+<DateRange
+  name=price_range
+  data={price_weeks}
+  dates=week
+  title="Date range"
+  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
+  defaultValue="All Time"
+/>
+
+```sql price_lines
+select week, 'Auction' as sale_type, auction_price as price
+from ${weekly}
+where class = '${inputs.class.value}'
+  and weight_lo = ${inputs.weight_lo.value}
+  and week between '${inputs.price_range.start}' and '${inputs.price_range.end}'
+union all
+select week, 'Direct' as sale_type, direct_price as price
+from ${weekly}
+where class = '${inputs.class.value}'
+  and weight_lo = ${inputs.weight_lo.value}
+  and week between '${inputs.price_range.start}' and '${inputs.price_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={price_lines}
+  x=week
+  y=price
+  series=sale_type
+  title="Auction and direct prices, $ per cwt"
+  yFmt='$#,##0'
+  seriesColors={{
+    'Auction': '#2f7d3c',
+    'Direct': '#e8843e'
+  }}
+  chartAreaHeight={200}
+  connectGroup="direct_auction"
+/>
+
+```sql difference_trend
+-- The average is taken over the whole history first and filtered to the date range afterwards,
+-- so the first weeks of a chosen range still average a full four weeks.
+with picked as (
+  select week, difference
+  from ${weekly}
+  where class = '${inputs.class.value}'
+    and weight_lo = ${inputs.weight_lo.value}
+),
+smoothed as (
+  select
+    week,
+    avg(difference) over (order by week rows between 3 preceding and current row) as diff_avg
+  from picked
+)
+select week, diff_avg
+from smoothed
+where week between '${inputs.price_range.start}' and '${inputs.price_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={difference_trend}
+  x=week
+  y=diff_avg
+  title="Direct minus auction, $ per cwt (4-week average)"
+  yFmt='+$#,##0;-$#,##0'
+  colorPalette={['#3f8fc4']}
+  chartAreaHeight={150}
+  connectGroup="direct_auction"
+/>
