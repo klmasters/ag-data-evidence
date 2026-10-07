@@ -60,3 +60,43 @@ Week of <Value data={latest} column=week fmt='mmm d, yyyy' />. Steers only, 500-
 </KMStats>
 
 The price slide is the light price minus the heavy price. A single week can swing when few head sold in one of the classes, so the charts below use a 4-week average.
+
+## Value of gain over time
+
+Each point is the average of the last four weekly values, which smooths out the weeks when few head sold.
+
+```sql gain_weeks
+select week from ${weekly}
+```
+
+<DateRange
+  name=gain_range
+  data={gain_weeks}
+  dates=week
+  title="Date range"
+  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
+  defaultValue="All Time"
+/>
+
+```sql gain_trend
+with averaged as (
+  select
+    week,
+    avg(value_of_gain) over (order by week rows between 3 preceding and current row) as gain_avg
+  from ${weekly}
+)
+select week, gain_avg
+from averaged
+where week between '${inputs.gain_range.start}' and '${inputs.gain_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={gain_trend}
+  x=week
+  y=gain_avg
+  title="Value of gain, $ per lb (4-week average)"
+  yFmt='$0.00'
+  yMin=0
+  colorPalette={['#2f7d3c']}
+/>
