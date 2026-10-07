@@ -225,3 +225,49 @@ order by week
 />
 
 The value of gain comes from auction prices. The hay cost is the hay price per pound times the slider's pounds of hay per pound of gain, and that slider value is an assumption, not USDA data. Hay is only one feed cost. Grain, minerals, labor, yardage, interest and death loss are all left out, so "left after hay" is not profit.
+
+## Year by year
+
+Yearly averages of the weekly figures. The cattle columns cover every week since April 2019. The hay columns cover the hay reports, which start in July 2020, so 2019 has no hay figures and 2020 covers only part of the year. The hay cost and "left after hay" columns follow the slider above. 2026 ends in September.
+
+```sql yearly_gain
+with cattle as (
+  select
+    year(week) as yr,
+    avg(light_price) as light_price,
+    avg(price_slide) as price_slide,
+    avg(value_of_gain) as value_of_gain
+  from ${weekly}
+  group by 1
+),
+hay as (
+  select
+    year(week) as yr,
+    avg(price_per_ton) as hay_price,
+    avg(hay_cost) as hay_cost,
+    avg(left_after_hay) as left_after_hay
+  from ${hay_vs_gain}
+  group by 1
+)
+select
+  cast(cattle.yr as varchar) as year,
+  cattle.light_price,
+  cattle.price_slide,
+  cattle.value_of_gain,
+  hay.hay_price,
+  hay.hay_cost,
+  hay.left_after_hay
+from cattle
+left join hay using (yr)
+order by cattle.yr
+```
+
+<DataTable data={yearly_gain} rows=10>
+  <Column id=year title="Year" />
+  <Column id=light_price title="500-600 lb steers, $ per cwt" fmt='$#,##0' />
+  <Column id=price_slide title="Price slide, $ per cwt" fmt='$#,##0' />
+  <Column id=value_of_gain title="Value of gain, $ per lb" fmt='$0.00' />
+  <Column id=hay_price title="Alfalfa hay, $ per ton" fmt='$#,##0' />
+  <Column id=hay_cost title="Hay cost per lb of gain" fmt='$0.00' />
+  <Column id=left_after_hay title="Left after hay, $ per lb" fmt='$0.00' />
+</DataTable>
