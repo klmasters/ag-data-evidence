@@ -1,3 +1,8 @@
+---
+title: Overview
+sidebar_position: 1
+---
+
 # Kansas Weekly Cattle Auction Summary
 
 ```sql mmn_1895_preview
