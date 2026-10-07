@@ -101,9 +101,68 @@ order by week
   colorPalette={['#2f7d3c']}
 />
 
-## Value of gain next to hay prices
+## Value of gain and the cost of hay
 
-Hay is a feed cost, so one thing to look for is whether gain gets more or less valuable when hay moves. These two charts share a time axis and a date range, but a pattern across them is not proof of cause. Hay prices start in July 2020.
+Hay is sold by the ton and gain is measured in pounds, so the two numbers cannot be compared directly. Two conversions put them in the same units, dollars per pound of gain. A ton is 2,000 lb, so $260 a ton is $0.13 per lb of hay. Then it depends on how much hay a steer eats for each pound it puts on, which is not in the USDA data. The slider sets that assumption. Hay prices start in July 2020.
+
+<Slider
+  title="Pounds of hay per pound of gain"
+  name=hay_lb
+  min=6
+  max=16
+  step=1
+  defaultValue=10
+/>
+
+```sql hay_vs_gain
+-- One row per hay report. Each is matched to the latest cattle week on or before it: cattle weeks
+-- start on Sundays and hay weeks on Mondays, so this pairs a hay report with the cattle week
+-- just before it. The 4-week average is taken first, over the whole history.
+with avg_gain as (
+  select
+    week,
+    avg(value_of_gain) over (order by week rows between 3 preceding and current row) as gain_avg
+  from ${weekly}
+),
+hay as (
+  select
+    cast(report_begin_date as date) as week,
+    sum(wtd_avg_price * quantity) / sum(quantity) as price_per_ton
+  from supabase_ag_pipeline.raw_mmn_2885_details
+  where class = 'Alfalfa'
+    and quality = 'Good'
+    and package = 'Large Square 3x4'
+    and price_unit = 'Per Ton'
+    and sale_type in ('Trade', 'Contract (Trade)')
+    and quantity > 0
+    and wtd_avg_price is not null
+  group by 1
+),
+assumption as (select cast('${inputs.hay_lb}' as double) as hay_lb)
+select
+  hay.week,
+  hay.price_per_ton,
+  hay.price_per_ton / 2000 * assumption.hay_lb as hay_cost,
+  avg_gain.gain_avg,
+  avg_gain.gain_avg - hay.price_per_ton / 2000 * assumption.hay_lb as left_after_hay
+from hay
+cross join assumption
+asof join avg_gain on avg_gain.week <= hay.week
+order by hay.week
+```
+
+```sql latest_hay
+select * from ${hay_vs_gain} order by week desc limit 1
+```
+
+Latest hay report, week of <Value data={latest_hay} column=week fmt='mmm d, yyyy' />
+
+<KMStats>
+  <BigValue data={latest_hay} value=price_per_ton fmt='$#,##0' title="Alfalfa hay, $ per ton" />
+  <BigValue data={latest_hay} value=hay_cost fmt='$0.00' title="Hay cost per lb of gain" />
+  <BigValue data={latest_hay} value=gain_avg fmt='$0.00' title="Value of gain, 4-week avg, $ per lb" />
+  <BigValue data={latest_hay} value=left_after_hay fmt='$0.00' title="Left after hay, $ per lb" />
+</KMStats>
 
 ```sql compare_weeks
 select week
@@ -120,57 +179,49 @@ where week >= date '2020-07-20'
   defaultValue="All Time"
 />
 
-```sql compare_gain
--- The average is taken over the whole history first and filtered to the date range afterwards,
--- so the first weeks of a chosen range still average a full four weeks.
-with averaged as (
-  select
-    week,
-    avg(value_of_gain) over (order by week rows between 3 preceding and current row) as gain_avg
-  from ${weekly}
-)
-select week, gain_avg
-from averaged
+```sql compare_lines
+select week, 'Value of gain' as series, gain_avg as dollars
+from ${hay_vs_gain}
+where week between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
+union all
+select week, 'Hay cost of that gain' as series, hay_cost as dollars
+from ${hay_vs_gain}
 where week between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
 order by week
 ```
 
 <KMLineChart
-  data={compare_gain}
+  data={compare_lines}
   x=week
-  y=gain_avg
-  title="Value of gain, $ per lb (4-week average)"
+  y=dollars
+  series=series
+  title="Value of gain and hay cost of that gain, $ per lb of gain"
   yFmt='$0.00'
   yMin=0
-  colorPalette={['#2f7d3c']}
-  chartAreaHeight={150}
+  seriesColors={{
+    'Value of gain': '#2f7d3c',
+    'Hay cost of that gain': '#e8843e'
+  }}
+  chartAreaHeight={180}
   connectGroup="gain_hay"
 />
 
-```sql compare_hay
-select
-  cast(report_begin_date as date) as week,
-  sum(wtd_avg_price * quantity) / sum(quantity) as price
-from supabase_ag_pipeline.raw_mmn_2885_details
-where class = 'Alfalfa'
-  and quality = 'Good'
-  and package = 'Large Square 3x4'
-  and price_unit = 'Per Ton'
-  and sale_type in ('Trade', 'Contract (Trade)')
-  and quantity > 0
-  and wtd_avg_price is not null
-  and cast(report_begin_date as date) between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
-group by 1
-order by 1
+```sql compare_left
+select week, left_after_hay
+from ${hay_vs_gain}
+where week between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
+order by week
 ```
 
 <KMLineChart
-  data={compare_hay}
+  data={compare_left}
   x=week
-  y=price
-  title="Alfalfa hay price, $ per ton (Good quality, large square bales)"
-  yFmt='$#,##0'
-  colorPalette={['#e8843e']}
+  y=left_after_hay
+  title="Left after hay, $ per lb of gain"
+  yFmt='$0.00'
+  colorPalette={['#3f8fc4']}
   chartAreaHeight={150}
   connectGroup="gain_hay"
 />
+
+The value of gain comes from auction prices. The hay cost is the hay price per pound times the slider's pounds of hay per pound of gain, and that slider value is an assumption, not USDA data. Hay is only one feed cost. Grain, minerals, labor, yardage, interest and death loss are all left out, so "left after hay" is not profit.
