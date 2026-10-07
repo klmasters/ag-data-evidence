@@ -180,3 +180,31 @@ order by week
   chartAreaHeight={150}
   connectGroup="direct_auction"
 />
+
+## Year by year
+
+Yearly averages of the weekly figures for the class and weight chosen above, using only weeks that have both kinds of sale. The share is direct head divided by all head sold either way, added up over the year. Direct reporting starts in September 2020 and 2026 ends in September.
+
+```sql yearly_direct
+select
+  cast(year(week) as varchar) as year,
+  count(*) as weeks,
+  avg(auction_price) as auction_price,
+  avg(direct_price) as direct_price,
+  avg(difference) as difference,
+  sum(direct_head) / sum(auction_head + direct_head) as direct_share
+from ${weekly}
+where class = '${inputs.class.value}'
+  and weight_lo = ${inputs.weight_lo.value}
+group by 1
+order by 1
+```
+
+<DataTable data={yearly_direct} rows=10>
+  <Column id=year title="Year" />
+  <Column id=weeks title="Weeks" />
+  <Column id=auction_price title="Auction, $ per cwt" fmt='$#,##0' />
+  <Column id=direct_price title="Direct, $ per cwt" fmt='$#,##0' />
+  <Column id=difference title="Direct minus auction" fmt='+$#,##0.00;-$#,##0.00' />
+  <Column id=direct_share title="Direct share of head sold" fmt='0%' />
+</DataTable>
