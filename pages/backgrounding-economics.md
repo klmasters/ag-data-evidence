@@ -100,3 +100,77 @@ order by week
   yMin=0
   colorPalette={['#2f7d3c']}
 />
+
+## Value of gain next to hay prices
+
+Hay is a feed cost, so one thing to look for is whether gain gets more or less valuable when hay moves. These two charts share a time axis and a date range, but a pattern across them is not proof of cause. Hay prices start in July 2020.
+
+```sql compare_weeks
+select week
+from ${weekly}
+where week >= date '2020-07-20'
+```
+
+<DateRange
+  name=compare_range
+  data={compare_weeks}
+  dates=week
+  title="Date range"
+  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
+  defaultValue="All Time"
+/>
+
+```sql compare_gain
+-- The average is taken over the whole history first and filtered to the date range afterwards,
+-- so the first weeks of a chosen range still average a full four weeks.
+with averaged as (
+  select
+    week,
+    avg(value_of_gain) over (order by week rows between 3 preceding and current row) as gain_avg
+  from ${weekly}
+)
+select week, gain_avg
+from averaged
+where week between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
+order by week
+```
+
+<KMLineChart
+  data={compare_gain}
+  x=week
+  y=gain_avg
+  title="Value of gain, $ per lb (4-week average)"
+  yFmt='$0.00'
+  yMin=0
+  colorPalette={['#2f7d3c']}
+  chartAreaHeight={150}
+  connectGroup="gain_hay"
+/>
+
+```sql compare_hay
+select
+  cast(report_begin_date as date) as week,
+  sum(wtd_avg_price * quantity) / sum(quantity) as price
+from supabase_ag_pipeline.raw_mmn_2885_details
+where class = 'Alfalfa'
+  and quality = 'Good'
+  and package = 'Large Square 3x4'
+  and price_unit = 'Per Ton'
+  and sale_type in ('Trade', 'Contract (Trade)')
+  and quantity > 0
+  and wtd_avg_price is not null
+  and cast(report_begin_date as date) between '${inputs.compare_range.start}' and '${inputs.compare_range.end}'
+group by 1
+order by 1
+```
+
+<KMLineChart
+  data={compare_hay}
+  x=week
+  y=price
+  title="Alfalfa hay price, $ per ton (Good quality, large square bales)"
+  yFmt='$#,##0'
+  colorPalette={['#e8843e']}
+  chartAreaHeight={150}
+  connectGroup="gain_hay"
+/>
