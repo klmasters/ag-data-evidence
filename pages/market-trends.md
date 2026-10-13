@@ -10,6 +10,96 @@ Weekly Kansas auction prices for feeder cattle, from the USDA Kansas Weekly Catt
   <DropdownOption value="Heifers" />
 </Dropdown>
 
+<Dropdown name=weight defaultValue="500" title="Weight class">
+  <DropdownOption value="400" valueLabel="400-500 lb" />
+  <DropdownOption value="500" valueLabel="500-600 lb" />
+  <DropdownOption value="600" valueLabel="600-700 lb" />
+  <DropdownOption value="700" valueLabel="700-800 lb" />
+</Dropdown>
+
+## Latest week: {inputs.weight.label} {inputs.class.value}
+
+Week of <Value data={latest} column=week fmt='mmm d, yyyy' />
+
+<KMStats>
+  <BigValue data={latest} value=price fmt='$#,##0.00' title="Price per cwt (100 lb)" />
+  <BigValue data={latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. year ago" />
+</KMStats>
+
+## Seasonal comparison: {inputs.weight.label} {inputs.class.value}
+
+This chart shows one line per year, with the current year being the darkest.
+
+<KMLineChart
+  data={seasonal}
+  x=week_of_year
+  y=avg_price
+  series=yr
+  handleMissing=connect
+  xFmt='0'
+  xAxisTitle="Week of year (1 = first week of January)"
+  yFmt='$#,##0'
+  yAxisTitle="$ per cwt (100 lb)"
+  colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
+/>
+
+## Heifer discount to steers: {inputs.weight.label}
+
+Heifers usually sell for less than steers of the same weight. A shrinking discount often shows up when producers are keeping heifers back to rebuild their herd. This chart follows the Weight class selector above but ignores the Class selector.
+
+<KMLineChart
+  data={heifer_spread}
+  x=week
+  y=heifer_discount
+  yFmt='0%'
+  yAxisTitle="Heifer discount (% below steers)"
+  colorPalette={['#2f7d3c']}
+/>
+
+## Price by weight class
+
+Average auction price for each weight class, weighted by how many head sold. Lighter calves bring more per cwt. Special lots (fancy, unweaned, thin-fleshed) are left out.
+
+<KMLineChart
+  data={price_trend}
+  x=week
+  y=avg_price
+  series=weight_class
+  yFmt='$#,##0'
+  yAxisTitle="$ per cwt (100 lb)"
+  colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
+/>
+
+## Auction volume: feeder cattle
+
+Feeder cattle are young cattle, usually weaned calves and yearlings, sold to be fed to a heavier weight before slaughter. This chart shows the total number of head of feeder cattle sold across the reporting Kansas auctions that week. Slaughter and replacement cattle are reported separately and are not included here.
+
+<KMStats>
+  <BigValue data={volume_latest} value=receipts fmt='#,##0' title="Head sold, latest week" />
+  <BigValue data={volume_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={volume_latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. same week last year" />
+</KMStats>
+
+<KMLineChart
+  data={volume_trend}
+  x=week
+  y=head_sold
+  series=period
+  yAxisTitle="Head sold"
+  seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
+/>
+
+## Data table
+
+<DataTable data={price_trend} rows=12 search=true>
+  <Column id=week fmt='yyyy-mm-dd' />
+  <Column id=weight_class />
+  <Column id=avg_price fmt='$#,##0.00' title="$ per cwt (100 lb)" />
+</DataTable>
+
+<!-- Queries: kept at the bottom so the page layout reads top to bottom. -->
+
 ```sql weekly
 select
   cast(report_begin_date as date) as week,
@@ -36,7 +126,7 @@ having sum(head_count) > 0
 with picked as (
   select week, weight_class, avg_price
   from ${weekly}
-  where class = '${inputs.class.value}' and weight_lo = 500
+  where class = '${inputs.class.value}' and weight_lo = cast('${inputs.weight.value}' as integer)
 ),
 last_week as (select max(week) as week from picked)
 select
@@ -50,40 +140,12 @@ left join picked prev on prev.week = cur.week - interval 7 day
 left join picked yr on yr.week = cur.week - interval 364 day
 ```
 
-## Latest week: 500-600 lb {inputs.class.value}
-
-Week of <Value data={latest} column=week fmt='mmm d, yyyy' />
-
-<KMStats>
-  <BigValue data={latest} value=price fmt='$#,##0.00' title="Price per cwt (100 lb)" />
-  <BigValue data={latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
-  <BigValue data={latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. year ago" />
-</KMStats>
-
-## Price by weight class
-
-Average auction price for each weight class, weighted by how many head sold. Lighter calves bring more per cwt. Special lots (fancy, unweaned, thin-fleshed) are left out.
-
 ```sql price_trend
 select week, weight_class, avg_price
 from ${weekly}
 where class = '${inputs.class.value}'
 order by week, weight_class
 ```
-
-<KMLineChart
-  data={price_trend}
-  x=week
-  y=avg_price
-  series=weight_class
-  yFmt='$#,##0'
-  yAxisTitle="$ per cwt (100 lb)"
-  colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
-/>
-
-## Seasonal comparison: 500-600 lb {inputs.class.value}
-
-This chart shows one line per year, with the current year being the darkest.
 
 ```sql seasonal
 select
@@ -94,49 +156,19 @@ select
   avg(avg_price) as avg_price
 from ${weekly}
 where class = '${inputs.class.value}'
-  and weight_lo = 500
+  and weight_lo = cast('${inputs.weight.value}' as integer)
   and year(week) >= (select max(year(week)) from ${weekly}) - 4
 group by 1, 2
 order by yr, week_of_year
 ```
 
-<KMLineChart
-  data={seasonal}
-  x=week_of_year
-  y=avg_price
-  series=yr
-  handleMissing=connect
-  xFmt='0'
-  xAxisTitle="Week of year (1 = first week of January)"
-  yFmt='$#,##0'
-  yAxisTitle="$ per cwt (100 lb)"
-  colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
-/>
-
-## Heifer discount to steers: 500-600 lb
-
-Heifers usually sell for less than steers of the same weight. A shrinking discount often shows up when producers are keeping heifers back to rebuild their herd. This chart ignores the Class selector above.
-
 ```sql heifer_spread
 select s.week, 1 - h.avg_price / s.avg_price as heifer_discount
 from ${weekly} s
 join ${weekly} h on h.week = s.week and h.weight_lo = s.weight_lo
-where s.class = 'Steers' and h.class = 'Heifers' and s.weight_lo = 500
+where s.class = 'Steers' and h.class = 'Heifers' and s.weight_lo = cast('${inputs.weight.value}' as integer)
 order by s.week
 ```
-
-<KMLineChart
-  data={heifer_spread}
-  x=week
-  y=heifer_discount
-  yFmt='0%'
-  yAxisTitle="Heifer discount (% below steers)"
-  colorPalette={['#2f7d3c']}
-/>
-
-## Auction volume: feeder cattle
-
-This chart shows the total number of head of feeder cattle sold across the reporting Kansas auctions that week. Slaughter and replacement cattle are reported separately and are not included here.
 
 ```sql volume
 select
@@ -160,12 +192,6 @@ order by week desc
 limit 1
 ```
 
-<KMStats>
-  <BigValue data={volume_latest} value=receipts fmt='#,##0' title="Head sold, latest week" />
-  <BigValue data={volume_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
-  <BigValue data={volume_latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. same week last year" />
-</KMStats>
-
 ```sql volume_trend
 select week, 'This year' as period, receipts as head_sold
 from ${volume}
@@ -176,20 +202,3 @@ from ${volume}
 where week > (select max(week) from ${volume}) - interval 364 day
 order by week
 ```
-
-<KMLineChart
-  data={volume_trend}
-  x=week
-  y=head_sold
-  series=period
-  yAxisTitle="Head sold"
-  seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
-/>
-
-## Data table
-
-<DataTable data={price_trend} rows=12 search=true>
-  <Column id=week fmt='yyyy-mm-dd' />
-  <Column id=weight_class />
-  <Column id=avg_price fmt='$#,##0.00' title="$ per cwt (100 lb)" />
-</DataTable>

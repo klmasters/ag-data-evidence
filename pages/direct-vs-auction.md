@@ -19,6 +19,75 @@ The auction numbers come from the Kansas Weekly Cattle Auction Summary (report 1
   <DropdownOption value="900" valueLabel="900-1,000 lb" />
 </Dropdown>
 
+## Latest week
+
+Auction week of <Value data={latest} column=week fmt='mmm d, yyyy' />, the most recent week with both kinds of sale in this class and weight.
+
+<KMStats>
+  <BigValue data={latest} value=auction_price fmt='$#,##0.00' title="Auction, $ per cwt" />
+  <BigValue data={latest} value=direct_price fmt='$#,##0.00' title="Direct, $ per cwt" />
+  <BigValue data={latest} value=difference fmt='+$#,##0.00;-$#,##0.00' title="Direct minus auction" />
+</KMStats>
+
+<KMStats>
+  <BigValue data={latest} value=auction_head fmt='#,##0' title="Head sold at auction" />
+  <BigValue data={latest} value=direct_head fmt='#,##0' title="Head sold direct" />
+</KMStats>
+
+## Prices over time
+
+Each point is one week. Weeks with no direct sales in this class and weight are left out. The lower chart shows how far direct is from auction, smoothed as the average of the last four weeks, because a single week can swing when few head sold.
+
+<DateRange
+  name=price_range
+  data={price_weeks}
+  dates=week
+  title="Date range"
+  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
+  defaultValue="All Time"
+/>
+
+<KMLineChart
+  data={price_lines}
+  x=week
+  y=price
+  series=sale_type
+  title="Auction and direct prices, $ per cwt"
+  yFmt='$#,##0'
+  seriesColors={{
+    'Auction': '#2f7d3c',
+    'Direct': '#e8843e'
+  }}
+  chartAreaHeight={200}
+  connectGroup="direct_auction"
+/>
+
+<KMLineChart
+  data={difference_trend}
+  x=week
+  y=diff_avg
+  title="Direct minus auction, $ per cwt (4-week average)"
+  yFmt='+$#,##0;-$#,##0'
+  colorPalette={['#3f8fc4']}
+  chartAreaHeight={150}
+  connectGroup="direct_auction"
+/>
+
+## Year by year
+
+Yearly averages of the weekly figures for the class and weight chosen above, using only weeks that have both kinds of sale. The share is direct head divided by all head sold either way, added up over the year. Direct reporting starts in September 2020 and 2026 ends in September.
+
+<DataTable data={yearly_direct} rows=10>
+  <Column id=year title="Year" />
+  <Column id=weeks title="Weeks" />
+  <Column id=auction_price title="Auction, $ per cwt" fmt='$#,##0' />
+  <Column id=direct_price title="Direct, $ per cwt" fmt='$#,##0' />
+  <Column id=difference title="Direct minus auction" fmt='+$#,##0.00;-$#,##0.00' />
+  <Column id=direct_share title="Direct share of head sold" fmt='0%' />
+</DataTable>
+
+<!-- Queries: kept at the bottom so the page layout reads top to bottom. -->
+
 ```sql weekly
 -- Auction weeks start on a Sunday (a Friday in the early years) and direct weeks on a Monday.
 -- Each direct week is paired with the auction week that began in the seven days up to it.
@@ -84,40 +153,12 @@ order by week desc
 limit 1
 ```
 
-## Latest week
-
-Auction week of <Value data={latest} column=week fmt='mmm d, yyyy' />, the most recent week with both kinds of sale in this class and weight.
-
-<KMStats>
-  <BigValue data={latest} value=auction_price fmt='$#,##0.00' title="Auction, $ per cwt" />
-  <BigValue data={latest} value=direct_price fmt='$#,##0.00' title="Direct, $ per cwt" />
-  <BigValue data={latest} value=difference fmt='+$#,##0.00;-$#,##0.00' title="Direct minus auction" />
-</KMStats>
-
-<KMStats>
-  <BigValue data={latest} value=auction_head fmt='#,##0' title="Head sold at auction" />
-  <BigValue data={latest} value=direct_head fmt='#,##0' title="Head sold direct" />
-</KMStats>
-
-## Prices over time
-
-Each point is one week. Weeks with no direct sales in this class and weight are left out. The lower chart shows how far direct is from auction, smoothed as the average of the last four weeks, because a single week can swing when few head sold.
-
 ```sql price_weeks
 select week
 from ${weekly}
 where class = '${inputs.class.value}'
   and weight_lo = ${inputs.weight_lo.value}
 ```
-
-<DateRange
-  name=price_range
-  data={price_weeks}
-  dates=week
-  title="Date range"
-  presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
-  defaultValue="All Time"
-/>
 
 ```sql price_lines
 select week, 'Auction' as sale_type, auction_price as price
@@ -133,21 +174,6 @@ where class = '${inputs.class.value}'
   and week between '${inputs.price_range.start}' and '${inputs.price_range.end}'
 order by week
 ```
-
-<KMLineChart
-  data={price_lines}
-  x=week
-  y=price
-  series=sale_type
-  title="Auction and direct prices, $ per cwt"
-  yFmt='$#,##0'
-  seriesColors={{
-    'Auction': '#2f7d3c',
-    'Direct': '#e8843e'
-  }}
-  chartAreaHeight={200}
-  connectGroup="direct_auction"
-/>
 
 ```sql difference_trend
 -- The average is taken over the whole history first and filtered to the date range afterwards,
@@ -170,21 +196,6 @@ where week between '${inputs.price_range.start}' and '${inputs.price_range.end}'
 order by week
 ```
 
-<KMLineChart
-  data={difference_trend}
-  x=week
-  y=diff_avg
-  title="Direct minus auction, $ per cwt (4-week average)"
-  yFmt='+$#,##0;-$#,##0'
-  colorPalette={['#3f8fc4']}
-  chartAreaHeight={150}
-  connectGroup="direct_auction"
-/>
-
-## Year by year
-
-Yearly averages of the weekly figures for the class and weight chosen above, using only weeks that have both kinds of sale. The share is direct head divided by all head sold either way, added up over the year. Direct reporting starts in September 2020 and 2026 ends in September.
-
 ```sql yearly_direct
 select
   cast(year(week) as varchar) as year,
@@ -199,12 +210,3 @@ where class = '${inputs.class.value}'
 group by 1
 order by 1
 ```
-
-<DataTable data={yearly_direct} rows=10>
-  <Column id=year title="Year" />
-  <Column id=weeks title="Weeks" />
-  <Column id=auction_price title="Auction, $ per cwt" fmt='$#,##0' />
-  <Column id=direct_price title="Direct, $ per cwt" fmt='$#,##0' />
-  <Column id=difference title="Direct minus auction" fmt='+$#,##0.00;-$#,##0.00' />
-  <Column id=direct_share title="Direct share of head sold" fmt='0%' />
-</DataTable>

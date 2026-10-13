@@ -7,22 +7,6 @@ How dry Kansas is, from the U.S. Drought Monitor, and how drought lines up with 
 
 The Drought Monitor maps every part of Kansas from "abnormally dry" (D0) up to "exceptional drought" (D4). Each number below is the share of the state at that level **or worse**.
 
-```sql drought_latest
-with d as (
-  select cast(map_date as date) as week, d1_pct, d2_pct
-  from supabase_ag_pipeline.raw_usdm_kansas
-),
-newest as (select max(week) as week from d)
-select
-  cur.week,
-  cur.d1_pct / 100 as in_drought,
-  cur.d2_pct / 100 as severe_drought,
-  cur.d1_pct - yr.d1_pct as in_drought_vs_year_ago
-from d cur
-join newest using (week)
-left join d yr on yr.week = cur.week - interval 364 day
-```
-
 ## Kansas drought right now
 
 Week of <Value data={drought_latest} column=week fmt='mmm d, yyyy' />
@@ -37,11 +21,6 @@ Week of <Value data={drought_latest} column=week fmt='mmm d, yyyy' />
 
 Each band is the share of Kansas at one drought level, from abnormally dry (D0) up to exceptional drought (D4). Major droughts show up as tall, dark bands, like 2011 to 2013 and 2022 to 2023.
 
-```sql drought_weeks
-select cast(map_date as date) as week
-from supabase_ag_pipeline.raw_usdm_kansas
-```
-
 <DateRange
   name=drought_range
   data={drought_weeks}
@@ -50,20 +29,6 @@ from supabase_ag_pipeline.raw_usdm_kansas
   presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
   defaultValue="All Time"
 />
-
-```sql drought_bands
-with d as (
-  select cast(map_date as date) as week, d0_pct, d1_pct, d2_pct, d3_pct, d4_pct
-  from supabase_ag_pipeline.raw_usdm_kansas
-  where cast(map_date as date) between '${inputs.drought_range.start}' and '${inputs.drought_range.end}'
-)
-select week, 'D0 Abnormally dry' as level, (d0_pct - d1_pct) / 100 as share from d
-union all select week, 'D1 Moderate drought', (d1_pct - d2_pct) / 100 from d
-union all select week, 'D2 Severe drought', (d2_pct - d3_pct) / 100 from d
-union all select week, 'D3 Extreme drought', (d3_pct - d4_pct) / 100 from d
-union all select week, 'D4 Exceptional drought', d4_pct / 100 from d
-order by week
-```
 
 <KMAreaChart
   data={drought_bands}
@@ -88,12 +53,6 @@ order by week
 
 Drought is only one of many things that move cattle and hay markets. These charts share a time axis so you can compare them, but a pattern across charts is not proof of cause. Hay prices start in July 2020.
 
-```sql market_weeks
-select week
-from ${drought_weeks}
-where week >= date '2020-07-20'
-```
-
 <DateRange
   name=market_range
   data={market_weeks}
@@ -102,15 +61,6 @@ where week >= date '2020-07-20'
   presetRanges={['Last 6 Months', 'Last 12 Months', 'Year to Date', 'Last Year', 'All Time']}
   defaultValue="All Time"
 />
-
-```sql severe_drought
-select
-  cast(map_date as date) as week,
-  d2_pct / 100 as severe_share
-from supabase_ag_pipeline.raw_usdm_kansas
-where cast(map_date as date) between '${inputs.market_range.start}' and '${inputs.market_range.end}'
-order by week
-```
 
 <KMLineChart
   data={severe_drought}
@@ -124,6 +74,104 @@ order by week
   chartAreaHeight={150}
   connectGroup="markets"
 />
+
+<KMLineChart
+  data={hay_price}
+  x=week
+  y=price
+  title="Alfalfa hay price, $ per ton (Good quality, large square bales)"
+  yFmt='$#,##0'
+  colorPalette={['#2f7d3c']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+<KMLineChart
+  data={steer_price}
+  x=week
+  y=price
+  title="500-600 lb steer price, $ per cwt (100 lb)"
+  yFmt='$#,##0'
+  colorPalette={['#3f8fc4']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+<KMLineChart
+  data={auction_volume}
+  x=week
+  y=head_avg
+  title="Feeder cattle sold at Kansas auctions, head per week (8-week average)"
+  yFmt='#,##0'
+  colorPalette={['#8f3d56']}
+  chartAreaHeight={150}
+  connectGroup="markets"
+/>
+
+## Year by year
+
+Yearly averages of the measures above. Prices and volume are averages of the weekly figures. 2020 starts in July and 2026 ends in September, so those two years cover fewer weeks.
+
+<DataTable data={yearly_summary} rows=10>
+  <Column id=year title="Year" />
+  <Column id=in_drought title="In drought (D1+)" fmt='0%' />
+  <Column id=severe_drought title="Severe drought (D2+)" fmt='0%' />
+  <Column id=hay_price title="Alfalfa hay, $ per ton" fmt='$#,##0' />
+  <Column id=steer_price title="500-600 lb steers, $ per cwt" fmt='$#,##0' />
+  <Column id=head_per_week title="Feeder cattle sold, head per week" fmt='#,##0' />
+</DataTable>
+
+<!-- Queries: kept at the bottom so the page layout reads top to bottom. -->
+
+```sql drought_latest
+with d as (
+  select cast(map_date as date) as week, d1_pct, d2_pct
+  from supabase_ag_pipeline.raw_usdm_kansas
+),
+newest as (select max(week) as week from d)
+select
+  cur.week,
+  cur.d1_pct / 100 as in_drought,
+  cur.d2_pct / 100 as severe_drought,
+  cur.d1_pct - yr.d1_pct as in_drought_vs_year_ago
+from d cur
+join newest using (week)
+left join d yr on yr.week = cur.week - interval 364 day
+```
+
+```sql drought_weeks
+select cast(map_date as date) as week
+from supabase_ag_pipeline.raw_usdm_kansas
+```
+
+```sql drought_bands
+with d as (
+  select cast(map_date as date) as week, d0_pct, d1_pct, d2_pct, d3_pct, d4_pct
+  from supabase_ag_pipeline.raw_usdm_kansas
+  where cast(map_date as date) between '${inputs.drought_range.start}' and '${inputs.drought_range.end}'
+)
+select week, 'D0 Abnormally dry' as level, (d0_pct - d1_pct) / 100 as share from d
+union all select week, 'D1 Moderate drought', (d1_pct - d2_pct) / 100 from d
+union all select week, 'D2 Severe drought', (d2_pct - d3_pct) / 100 from d
+union all select week, 'D3 Extreme drought', (d3_pct - d4_pct) / 100 from d
+union all select week, 'D4 Exceptional drought', d4_pct / 100 from d
+order by week
+```
+
+```sql market_weeks
+select week
+from ${drought_weeks}
+where week >= date '2020-07-20'
+```
+
+```sql severe_drought
+select
+  cast(map_date as date) as week,
+  d2_pct / 100 as severe_share
+from supabase_ag_pipeline.raw_usdm_kansas
+where cast(map_date as date) between '${inputs.market_range.start}' and '${inputs.market_range.end}'
+order by week
+```
 
 ```sql hay_price
 select
@@ -142,17 +190,6 @@ group by 1
 order by 1
 ```
 
-<KMLineChart
-  data={hay_price}
-  x=week
-  y=price
-  title="Alfalfa hay price, $ per ton (Good quality, large square bales)"
-  yFmt='$#,##0'
-  colorPalette={['#2f7d3c']}
-  chartAreaHeight={150}
-  connectGroup="markets"
-/>
-
 ```sql steer_price
 select
   cast(report_begin_date as date) as week,
@@ -169,17 +206,6 @@ group by 1
 having sum(head_count) > 0
 order by 1
 ```
-
-<KMLineChart
-  data={steer_price}
-  x=week
-  y=price
-  title="500-600 lb steer price, $ per cwt (100 lb)"
-  yFmt='$#,##0'
-  colorPalette={['#3f8fc4']}
-  chartAreaHeight={150}
-  connectGroup="markets"
-/>
 
 ```sql auction_volume
 -- The average is taken over the whole history first and filtered to the date range afterwards,
@@ -199,21 +225,6 @@ from smoothed
 where week between '${inputs.market_range.start}' and '${inputs.market_range.end}'
 order by week
 ```
-
-<KMLineChart
-  data={auction_volume}
-  x=week
-  y=head_avg
-  title="Feeder cattle sold at Kansas auctions, head per week (8-week average)"
-  yFmt='#,##0'
-  colorPalette={['#8f3d56']}
-  chartAreaHeight={150}
-  connectGroup="markets"
-/>
-
-## Year by year
-
-Yearly averages of the measures above. Prices and volume are averages of the weekly figures. 2020 starts in July and 2026 ends in September, so those two years cover fewer weeks.
 
 ```sql yearly_summary
 with drought as (
@@ -273,12 +284,3 @@ left join steer using (yr)
 left join volume using (yr)
 order by drought.yr
 ```
-
-<DataTable data={yearly_summary} rows=10>
-  <Column id=year title="Year" />
-  <Column id=in_drought title="In drought (D1+)" fmt='0%' />
-  <Column id=severe_drought title="Severe drought (D2+)" fmt='0%' />
-  <Column id=hay_price title="Alfalfa hay, $ per ton" fmt='$#,##0' />
-  <Column id=steer_price title="500-600 lb steers, $ per cwt" fmt='$#,##0' />
-  <Column id=head_per_week title="Feeder cattle sold, head per week" fmt='#,##0' />
-</DataTable>
