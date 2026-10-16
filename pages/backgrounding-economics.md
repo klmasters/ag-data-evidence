@@ -52,6 +52,7 @@ Each column is one choice, worked out step by step. Prices and costs are the ave
   data={scenario_years}
   x=year
   y=extra
+  sort=false
   title="What feeding added or took away, $ per head"
   yFmt='+$#,##0;-$#,##0'
   fillColor='#2f7d3c'
