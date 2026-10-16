@@ -558,10 +558,6 @@ select 8, 'Left after hay',
 union all
 select 9, 'Feeding adds',
   '',
-  case when extra_up then '+' else '-' end || (case when cast(round(extra_size) as bigint) >= 1000 then '$' || cast(cast(round(extra_size) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(extra_size) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(extra_size) as bigint) as varchar) end), years from t
-union all
-select 10, 'Years feeding paid',
-  '',
-  wins || ' of ' || years, years from t
+  case when extra_up then '+' else '-' end || (case when cast(round(extra_size) as bigint) >= 1000 then '$' || cast(cast(round(extra_size) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(extra_size) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(extra_size) as bigint) as varchar) end) || ' per head', years from t
 order by ord
 ```
