@@ -40,6 +40,17 @@ Say you own a steer and it is time to decide: sell it at today's weight, or feed
 
 <Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
 
+The plan, with the dates used in every past year. Prices are averaged over the four weeks around each date.
+
+<DataTable data={scenario_plan}>
+  <Column id=step title="Step" />
+  <Column id=weight title="Weight, lb" fmt='#,##0' />
+  <Column id=on_date title="Date" />
+  <Column id=price_window title="Auction prices averaged over" />
+  <Column id=hay_window title="Hay prices averaged over" />
+  <Column id=days title="Days on feed" fmt='0' />
+</DataTable>
+
 <KMStats>
   <BigValue data={scenario_summary} value=sell_now fmt='$#,##0' title="Sell now, $ per head" />
   <BigValue data={scenario_summary} value=keep_value fmt='$#,##0' title="Sell heavier, $ per head" />
@@ -496,4 +507,42 @@ select
   max(days) as days,
   max(hay_tons) as hay_tons
 from ${scenario_years}
+```
+
+```sql scenario_plan
+-- The two dates of the plan, shown without a year since every past year uses the same month and day.
+-- 2025 is only a stand-in year for the labels.
+with params as (
+  select
+    cast('${inputs.start_month.value}' as integer) as m,
+    cast('${inputs.start_wt}' as double) as start_wt,
+    cast('${inputs.end_wt}' as double) as end_wt,
+    cast('${inputs.adg}' as double) as adg
+),
+plan as (
+  select
+    *,
+    make_date(2025, m, 15) as start_date,
+    make_date(2025, m, 15) + cast(round((end_wt - start_wt) / adg) as integer) as sale_date,
+    cast(round((end_wt - start_wt) / adg) as integer) as days
+  from params
+  where end_wt > start_wt
+)
+select
+  'Sell now' as step,
+  start_wt as weight,
+  strftime(start_date, '%b %-d') as on_date,
+  strftime(start_date - 14, '%b %-d') || ' to ' || strftime(start_date + 14, '%b %-d') as price_window,
+  'Not used' as hay_window,
+  0 as days
+from plan
+union all
+select
+  'Sell heavier' as step,
+  end_wt as weight,
+  strftime(sale_date, '%b %-d') as on_date,
+  strftime(sale_date - 14, '%b %-d') || ' to ' || strftime(sale_date + 14, '%b %-d') as price_window,
+  strftime(start_date, '%b %-d') || ' to ' || strftime(sale_date, '%b %-d') as hay_window,
+  days
+from plan
 ```
