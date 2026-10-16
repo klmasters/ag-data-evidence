@@ -36,7 +36,7 @@ Say you own a steer and it is time to decide: sell it at today's weight, or feed
   <Slider title="Weight today, lb" name=start_wt min=500 max=800 step=25 defaultValue=600 />
   <Slider title="Selling weight, lb" name=end_wt min=550 max=850 step=25 defaultValue=700 />
   <Slider title="Gain per day, lb" name=adg min=1 max=3.5 step=0.25 defaultValue=2 />
-  <Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
+  <Slider title="Hay per day, lb" name=scen_hay_day min=10 max=35 step=1 defaultValue=20 />
 </Grid>
 
 Each column is one choice, worked out step by step. Prices and costs are the average of <Value data={scenario_compare} column=years fmt='0' /> past years, each replayed on the same dates.
@@ -76,7 +76,7 @@ Each column is one choice, worked out step by step. Prices and costs are the ave
 - **The dates.** The decision is made in the middle of the month you pick. The sale date is that day plus the days it takes to gain the weight, which is the pounds gained divided by the gain per day you set. Each past year is replayed with its own prices on those two dates.
 - **Selling now.** Weight today times the price per cwt for that weight. This is what the steer brings, not profit, because what you paid for it is not included.
 - **Selling heavier.** Weight at sale times the price per cwt at that weight on the sale date, minus the hay.
-- **The hay.** The hay eaten is the pounds gained times the pounds of hay per pound of gain you set, which is an assumption and not USDA data. It is priced at the average of the hay reports between the two dates, using Good quality large square 3x4 bales of the hay you pick, from the Kansas Direct Hay report. Hay reports start in July 2020, so the first year that can be replayed with a fall start is 2020.
+- **The hay.** The hay eaten is the days on feed times the pounds of hay per day you set, which is an assumption and not USDA data. A slower gain means more days, so more hay. It is priced at the average of the hay reports between the two dates, using Good quality large square 3x4 bales of the hay you pick, from the Kansas Direct Hay report. Hay reports start in July 2020, so the first year that can be replayed with a fall start is 2020.
 - **What is left out.** Grain, minerals, labor, yardage, vet costs, interest and death loss are not counted. A steer that gains 2 lb a day on hay alone is itself an assumption. Years that are not finished yet, or have no hay reports in the window, are skipped.
 - **The past is not a forecast.** Each year is one outcome. The average is only the middle of what has happened.
 
@@ -357,10 +357,10 @@ with params as (
     cast('${inputs.start_wt}' as double) as start_wt,
     cast('${inputs.end_wt}' as double) as end_wt,
     cast('${inputs.adg}' as double) as adg,
-    cast('${inputs.scen_hay_lb}' as double) as hay_lb
+    cast('${inputs.scen_hay_day}' as double) as hay_day
 ),
 plan as (
-  select *, (end_wt - start_wt) / adg as days
+  select *, round((end_wt - start_wt) / adg) as days
   from params
   where end_wt > start_wt
 ),
@@ -459,7 +459,7 @@ joined as (
     hay.hay_price,
     plan.start_wt,
     plan.end_wt,
-    plan.hay_lb,
+    plan.hay_day,
     plan.days
   from prices s
   join prices e on e.yr = s.yr and e.kind = 'sale'
@@ -475,11 +475,11 @@ select
   hay_price,
   start_price * start_wt / 100 as sell_now,
   end_price * end_wt / 100 as keep_value,
-  (end_wt - start_wt) * hay_lb / 2000 * hay_price as hay_cost,
-  end_price * end_wt / 100 - (end_wt - start_wt) * hay_lb / 2000 * hay_price
+  days * hay_day / 2000 * hay_price as hay_cost,
+  end_price * end_wt / 100 - days * hay_day / 2000 * hay_price
     - start_price * start_wt / 100 as extra,
   days,
-  (end_wt - start_wt) * hay_lb / 2000 as hay_tons
+  days * hay_day / 2000 as hay_tons
 from joined
 order by yr
 ```
