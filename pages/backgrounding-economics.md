@@ -32,13 +32,12 @@ Say you own a steer and it is time to decide: sell it at today's weight, or feed
   <DropdownOption value="Bluestem Grass" valueLabel="Bluestem grass" />
 </Dropdown>
 
-<Slider title="Weight today, lb" name=start_wt min=500 max=800 step=25 defaultValue=600 />
-
-<Slider title="Selling weight, lb" name=end_wt min=550 max=850 step=25 defaultValue=700 />
-
-<Slider title="Gain per day, lb" name=adg min=1 max=3.5 step=0.25 defaultValue=2 />
-
-<Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
+<Grid cols=4>
+  <Slider title="Weight today, lb" name=start_wt min=500 max=800 step=25 defaultValue=600 />
+  <Slider title="Selling weight, lb" name=end_wt min=550 max=850 step=25 defaultValue=700 />
+  <Slider title="Gain per day, lb" name=adg min=1 max=3.5 step=0.25 defaultValue=2 />
+  <Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
+</Grid>
 
 Each column is one choice, worked out step by step. Prices and costs are the average of <Value data={scenario_compare} column=years fmt='0' /> past years, each replayed on the same dates.
 
