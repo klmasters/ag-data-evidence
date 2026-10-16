@@ -38,7 +38,7 @@ Say you own a steer and it is time to decide: sell it at today's weight, or feed
 
 <Slider title="Gain per day, lb" name=adg min=1 max=3.5 step=0.25 defaultValue=2 />
 
-<Slider title="Hay lb per lb of gain" name=hay_lb min=6 max=16 step=1 defaultValue=10 />
+<Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
 
 <KMStats>
   <BigValue data={scenario_summary} value=sell_now fmt='$#,##0' title="Sell now, $ per head" />
@@ -358,7 +358,7 @@ with params as (
     cast('${inputs.start_wt}' as double) as start_wt,
     cast('${inputs.end_wt}' as double) as end_wt,
     cast('${inputs.adg}' as double) as adg,
-    cast('${inputs.hay_lb}' as double) as hay_lb
+    cast('${inputs.scen_hay_lb}' as double) as hay_lb
 ),
 plan as (
   select *, (end_wt - start_wt) / adg as days
