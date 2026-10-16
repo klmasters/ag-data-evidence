@@ -40,25 +40,13 @@ Say you own a steer and it is time to decide: sell it at today's weight, or feed
 
 <Slider title="Hay lb per lb of gain" name=scen_hay_lb min=6 max=16 step=1 defaultValue=10 />
 
-The plan, with the dates used in every past year. Prices are averaged over the four weeks around each date.
+Each column is one choice, worked out step by step. Prices and costs are the average of <Value data={scenario_compare} column=years fmt='0' /> past years, each replayed on the same dates.
 
-<DataTable data={scenario_plan}>
-  <Column id=step title="Step" />
-  <Column id=weight title="Weight, lb" fmt='#,##0' />
-  <Column id=on_date title="Date" />
-  <Column id=price_window title="Auction prices averaged over" />
-  <Column id=hay_window title="Hay prices averaged over" />
-  <Column id=days title="Days on feed" fmt='0' />
+<DataTable data={scenario_compare} rows=12>
+  <Column id=item title=" " />
+  <Column id=sell_now title="Sell now" />
+  <Column id=sell_heavier title="Sell heavier" />
 </DataTable>
-
-<KMStats>
-  <BigValue data={scenario_summary} value=sell_now fmt='$#,##0' title="Sell now, $ per head" />
-  <BigValue data={scenario_summary} value=keep_value fmt='$#,##0' title="Sell heavier, $ per head" />
-  <BigValue data={scenario_summary} value=hay_cost fmt='$#,##0' title="Hay cost, $ per head" />
-  <BigValue data={scenario_summary} value=extra fmt='+$#,##0;-$#,##0' title="Feeding adds, $ per head" />
-</KMStats>
-
-Averages over <Value data={scenario_summary} column=years fmt='0' /> years. Feeding added money in <Value data={scenario_summary} column=wins fmt='0' /> of them. The plan takes <Value data={scenario_summary} column=days fmt='0' /> days and uses <Value data={scenario_summary} column=hay_tons fmt='0.00' /> tons of hay per head.
 
 <KMBarChart
   data={scenario_years}
@@ -496,22 +484,11 @@ from joined
 order by yr
 ```
 
-```sql scenario_summary
-select
-  count(*) as years,
-  count(*) filter (where extra > 0) as wins,
-  avg(sell_now) as sell_now,
-  avg(keep_value) as keep_value,
-  avg(hay_cost) as hay_cost,
-  avg(extra) as extra,
-  max(days) as days,
-  max(hay_tons) as hay_tons
-from ${scenario_years}
-```
-
-```sql scenario_plan
--- The two dates of the plan, shown without a year since every past year uses the same month and day.
--- 2025 is only a stand-in year for the labels.
+```sql scenario_compare
+-- One table for the whole decision. The dates are shown without a year, since every past year uses
+-- the same month and day (2025 is only a stand-in year for the labels). Money and prices are the
+-- averages of the past years in scenario_years. Numbers are turned into text by hand (no curly
+-- braces, which Evidence would read as page code); the money helper adds the thousands comma.
 with params as (
   select
     cast('${inputs.start_month.value}' as integer) as m,
@@ -523,26 +500,67 @@ plan as (
   select
     *,
     make_date(2025, m, 15) as start_date,
-    make_date(2025, m, 15) + cast(round((end_wt - start_wt) / adg) as integer) as sale_date,
-    cast(round((end_wt - start_wt) / adg) as integer) as days
+    cast(round((end_wt - start_wt) / adg) as integer) as days,
+    make_date(2025, m, 15) + cast(round((end_wt - start_wt) / adg) as integer) as sale_date
   from params
   where end_wt > start_wt
+),
+avgs as (
+  select
+    count(*) as years,
+    count(*) filter (where extra > 0) as wins,
+    avg(start_price) as start_price,
+    avg(end_price) as end_price,
+    avg(sell_now) as sell_now,
+    avg(keep_value) as keep_value,
+    avg(hay_cost) as hay_cost,
+    avg(keep_value - hay_cost) as left_after_hay,
+    abs(avg(extra)) as extra_size,
+    avg(extra) >= 0 as extra_up,
+    max(hay_tons) as hay_tons
+  from ${scenario_years}
+),
+t as (
+  select * from plan cross join avgs
 )
-select
-  'Sell now' as step,
-  start_wt as weight,
-  strftime(start_date, '%b %-d') as on_date,
-  strftime(start_date - 14, '%b %-d') || ' to ' || strftime(start_date + 14, '%b %-d') as price_window,
-  'Not used' as hay_window,
-  0 as days
-from plan
+select 1 as ord, 'Steer weight' as item,
+  cast(cast(start_wt as integer) as varchar) || ' lb' as sell_now,
+  cast(cast(end_wt as integer) as varchar) || ' lb' as sell_heavier, years from t
 union all
-select
-  'Sell heavier' as step,
-  end_wt as weight,
-  strftime(sale_date, '%b %-d') as on_date,
-  strftime(sale_date - 14, '%b %-d') || ' to ' || strftime(sale_date + 14, '%b %-d') as price_window,
-  strftime(start_date, '%b %-d') || ' to ' || strftime(sale_date, '%b %-d') as hay_window,
-  days
-from plan
+select 2, 'Date',
+  strftime(start_date, '%b %-d'),
+  strftime(sale_date, '%b %-d') || ', ' || days || ' days later', years from t
+union all
+select 3, 'Auction prices averaged over',
+  strftime(start_date - 14, '%b %-d') || ' to ' || strftime(start_date + 14, '%b %-d'),
+  strftime(sale_date - 14, '%b %-d') || ' to ' || strftime(sale_date + 14, '%b %-d'), years from t
+union all
+select 4, 'Average price at that weight',
+  '$' || printf('%.2f', start_price) || ' per cwt',
+  '$' || printf('%.2f', end_price) || ' per cwt', years from t
+union all
+select 5, 'What the steer brings',
+  (case when cast(round(sell_now) as bigint) >= 1000 then '$' || cast(cast(round(sell_now) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(sell_now) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(sell_now) as bigint) as varchar) end),
+  (case when cast(round(keep_value) as bigint) >= 1000 then '$' || cast(cast(round(keep_value) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(keep_value) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(keep_value) as bigint) as varchar) end), years from t
+union all
+select 6, 'Hay prices averaged over',
+  'No hay fed',
+  strftime(start_date, '%b %-d') || ' to ' || strftime(sale_date, '%b %-d'), years from t
+union all
+select 7, 'Hay cost',
+  '$0',
+  '-' || (case when cast(round(hay_cost) as bigint) >= 1000 then '$' || cast(cast(round(hay_cost) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(hay_cost) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(hay_cost) as bigint) as varchar) end) || ' (' || printf('%.2f', hay_tons) || ' tons)', years from t
+union all
+select 8, 'Left after hay',
+  (case when cast(round(sell_now) as bigint) >= 1000 then '$' || cast(cast(round(sell_now) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(sell_now) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(sell_now) as bigint) as varchar) end),
+  (case when cast(round(left_after_hay) as bigint) >= 1000 then '$' || cast(cast(round(left_after_hay) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(left_after_hay) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(left_after_hay) as bigint) as varchar) end), years from t
+union all
+select 9, 'Feeding adds',
+  '',
+  case when extra_up then '+' else '-' end || (case when cast(round(extra_size) as bigint) >= 1000 then '$' || cast(cast(round(extra_size) as bigint) // 1000 as varchar) || ',' || lpad(cast(cast(round(extra_size) as bigint) % 1000 as varchar), 3, '0') else '$' || cast(cast(round(extra_size) as bigint) as varchar) end), years from t
+union all
+select 10, 'Years feeding paid',
+  '',
+  wins || ' of ' || years, years from t
+order by ord
 ```
