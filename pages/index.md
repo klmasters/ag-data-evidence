@@ -1,6 +1,7 @@
 ---
 title: Overview
 sidebar_position: 1
+dev_only: true
 ---
 
 This site follows the Kansas cattle market along with droughts and the price of hay. The data is public and available from USDA Market News reports and the U.S. Drought Monitor. A set of scripts loads each source into a Neon Postgres database every week. This site is built from that database using Evidence.
