@@ -1,8 +1,7 @@
 [build]
-  # First drop pages marked dev_only (see scripts/drop-dev-pages.mjs). "sources" queries Neon and
-  # refreshes the data; "build" then makes the static site.
+  # "sources" queries Neon and refreshes the data; "build" then makes the static site.
   # A rebuild is therefore all it takes to pick up the latest weekly load.
-  command = "node scripts/drop-dev-pages.mjs && npm run sources && npm run build"
+  command = "npm run sources && npm run build"
   publish = "build"
 
 [build.environment]
