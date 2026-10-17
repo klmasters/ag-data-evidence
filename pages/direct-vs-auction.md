@@ -5,7 +5,7 @@ sidebar_position: 5
 
 Feeder cattle in Kansas are sold two main ways. At an **auction**, cattle are sold one lot at a time in a sale barn ring, and USDA summarizes each week's sales. In a **direct** sale, a seller and a buyer agree on a price without an auction, and USDA reports those sales separately. This page compares the two prices for the same kind of cattle.
 
-The auction numbers come from the Kansas Weekly Cattle Auction Summary (report 1895) and the direct numbers from the Kansas Direct Cattle report (3097). Prices are per cwt (hundredweight, 100 lb). To keep the comparison fair, both sides use the same rules: head-weighted averages, no special lots (fancy, unweaned, fleshy and so on), and cattle grouped by their average weight. Direct sales are also limited to cash sales for current delivery, since a price for cattle delivered months from now is not comparable to today's auction price.
+The auction numbers come from the [Kansas Weekly Cattle Auction Summary (report 1895)](https://mymarketnews.ams.usda.gov/viewReport/1895) and the direct numbers from the [Kansas Direct Cattle report (3097)](https://mymarketnews.ams.usda.gov/viewReport/3097). Prices are per cwt (hundredweight, 100 lb). To keep the comparison fair, both sides use the same rules: head-weighted averages, no special lots (fancy, unweaned, fleshy and so on), and cattle grouped by their average weight. Direct sales are also limited to cash sales for current delivery, since a price for cattle delivered months from now is not comparable to today's auction price.
 
 <Dropdown name=class defaultValue="Steers" title="Class">
   <DropdownOption value="Steers" />

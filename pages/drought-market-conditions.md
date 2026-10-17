@@ -3,7 +3,7 @@ title: "Drought & Market Conditions"
 sidebar_position: 4
 ---
 
-How dry Kansas is, from the U.S. Drought Monitor, and how drought lines up with hay prices, cattle prices, and auction volume.
+How dry Kansas is, from the [U.S. Drought Monitor](https://droughtmonitor.unl.edu/), and how drought lines up with hay prices, cattle prices, and auction volume.
 
 The Drought Monitor maps every part of Kansas from "abnormally dry" (D0) up to "exceptional drought" (D4). Each number below is the share of the state at that level **or worse**.
 

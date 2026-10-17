@@ -70,11 +70,11 @@ Each column is one choice, worked out step by step. Prices and costs are the ave
 
 ### What this assumes
 
-- **The steer and the price.** Auction prices for steers, from the Kansas weekly auction summary, grouped in 100 lb weight classes. The price for your exact weight is read off a straight line between the two nearest classes, since a 600 lb steer sits between the 500-600 and 600-700 classes. Prices are the average of the four weeks around the date.
+- **The steer and the price.** Auction prices for steers, from the [Kansas weekly auction summary (report 1895)](https://mymarketnews.ams.usda.gov/viewReport/1895), grouped in 100 lb weight classes. The price for your exact weight is read off a straight line between the two nearest classes, since a 600 lb steer sits between the 500-600 and 600-700 classes. Prices are the average of the four weeks around the date.
 - **The dates.** The decision is made in the middle of the month you pick. The sale date is that day plus the days it takes to gain the weight, which is the pounds gained divided by the gain per day you set. Each past year is replayed with its own prices on those two dates.
 - **Selling now.** Weight today times the price per cwt for that weight. This is what the steer brings, not profit, because what you paid for it is not included.
 - **Selling heavier.** Weight at sale times the price per cwt at that weight on the sale date, minus the hay.
-- **The hay.** The hay eaten is the days on feed times the pounds of hay per day you set, which is an assumption and not USDA data. A slower gain means more days, so more hay. It is priced at the average of the hay reports between the two dates, using Good quality large square 3x4 bales of the hay you pick, from the Kansas Direct Hay report. Hay reports start in July 2020, so the first year that can be replayed with a fall start is 2020.
+- **The hay.** The hay eaten is the days on feed times the pounds of hay per day you set, which is an assumption and not USDA data. A slower gain means more days, so more hay. It is priced at the average of the hay reports between the two dates, using Good quality large square 3x4 bales of the hay you pick, from the [Kansas Direct Hay report (report 2885)](https://mymarketnews.ams.usda.gov/viewReport/2885). Hay reports start in July 2020, so the first year that can be replayed with a fall start is 2020.
 - **What is left out.** Grain, minerals, labor, yardage, vet costs, interest and death loss are not counted. A steer that gains 2 lb a day on hay alone is itself an assumption. Years that are not finished yet, or have no hay reports in the window, are skipped.
 - **The past is not a forecast.** Each year is one outcome. The average is only the middle of what has happened.
 

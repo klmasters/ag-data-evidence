@@ -5,7 +5,7 @@ sidebar_position: 3
 
 Hay is the biggest feed cost for a cow herd or a set of backgrounded calves, and Kansas sells several kinds of it. This page looks at how the price changes with three things: **hay type** (alfalfa, brome grass, bluestem grass, or wheat straw), **package** (how the hay is baled, such as large round bales or 3x4 large squares) and **quality** (the USDA grade, from Fair up to Supreme).
 
-The numbers come from the Kansas Direct Hay report (USDA Market News report 2885). Prices are dollars per ton. Only actual trades are used, so asking and offering prices, which come with no tons sold, are left out. Every average is weighted by tons sold, so a big sale counts for more than a small one. Hay pellets are left out because they are a processed feed that sells for a very different price.
+The numbers come from the [Kansas Direct Hay report (USDA Market News report 2885)](https://mymarketnews.ams.usda.gov/viewReport/2885). Prices are dollars per ton. Only actual trades are used, so asking and offering prices, which come with no tons sold, are left out. Every average is weighted by tons sold, so a big sale counts for more than a small one. Hay pellets are left out because they are a processed feed that sells for a very different price.
 
 ## Price by hay type
 
