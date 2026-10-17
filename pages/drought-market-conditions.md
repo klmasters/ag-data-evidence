@@ -1,6 +1,6 @@
 ---
 title: "Drought & Market Conditions"
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 How dry Kansas is, from the U.S. Drought Monitor, and how drought lines up with hay prices, cattle prices, and auction volume.

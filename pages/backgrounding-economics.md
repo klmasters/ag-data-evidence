@@ -1,6 +1,6 @@
 ---
 title: Backgrounding Economics
-sidebar_position: 4
+sidebar_position: 2
 ---
 
 Backgrounding means buying light calves, feeding them to a heavier weight, and selling them again. The money is in the weight they put on. This page uses Kansas auction and hay prices to show what feeding calves up has been worth in past years.

@@ -1,6 +1,6 @@
 ---
 title: Hay Market
-sidebar_position: 6
+sidebar_position: 3
 ---
 
 Hay is the biggest feed cost for a cow herd or a set of backgrounded calves, and Kansas sells several kinds of it. This page looks at how the price changes with three things: **hay type** (alfalfa, brome grass, bluestem grass, or wheat straw), **package** (how the hay is baled, such as large round bales or 3x4 large squares) and **quality** (the USDA grade, from Fair up to Supreme).

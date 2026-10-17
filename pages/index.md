@@ -1,6 +1,6 @@
 ---
 title: Cattle Market Trends
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 Weekly Kansas auction prices for feeder cattle, from the USDA Kansas Weekly Cattle Auction Summary (report 1895). Prices are quoted per cwt (per 100 pounds of live weight).
