@@ -1,165 +1,204 @@
 ---
-title: Overview
-sidebar_position: 1
-dev_only: true
+title: Cattle Market Trends
+sidebar_position: 2
 ---
 
-This site follows the Kansas cattle market along with droughts and the price of hay. The data is public and available from USDA Market News reports and the U.S. Drought Monitor. A set of scripts loads each source into a Neon Postgres database every week. This site is built from that database using Evidence.
+Weekly Kansas auction prices for feeder cattle, from the USDA Kansas Weekly Cattle Auction Summary (report 1895). Prices are quoted per cwt (per 100 pounds of live weight).
 
-Each source reports on its own schedule, so the dates below do not always match. Hay usually runs about a week behind cattle.
+<Dropdown name=class defaultValue="Steers" title="Class">
+  <DropdownOption value="Steers" />
+  <DropdownOption value="Heifers" />
+</Dropdown>
 
-## Feeder cattle prices
+<Dropdown name=weight defaultValue="500" title="Weight class">
+  <DropdownOption value="400" valueLabel="400-500 lb" />
+  <DropdownOption value="500" valueLabel="500-600 lb" />
+  <DropdownOption value="600" valueLabel="600-700 lb" />
+  <DropdownOption value="700" valueLabel="700-800 lb" />
+</Dropdown>
 
-Kansas auction prices, from the weekly auction summary. Prices are quoted per cwt (hundredweight), which means per 100 pounds of live weight. Week of <Value data={steer_latest} column=week fmt='mmm d, yyyy' />
+## Latest week: {inputs.weight.label} {inputs.class.value}
 
-<KMStats>
-  <BigValue data={steer_latest} value=price fmt='$#,##0.00' title="500-600 lb steers, $ per cwt" />
-  <BigValue data={steer_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
-</KMStats>
-
-[See the full price history on Cattle Market Trends](/market-trends)
-
-## Direct cattle sales
-
-Cattle sold directly, without an auction, from the Kansas Direct Cattle report. The comparison is for 800-900 lb steers, where the two kinds of sale overlap most. Auction week of <Value data={direct_latest} column=week fmt='mmm d, yyyy' />
-
-<KMStats>
-  <BigValue data={direct_latest} value=auction_price fmt='$#,##0.00' title="Auction, $ per cwt" />
-  <BigValue data={direct_latest} value=direct_price fmt='$#,##0.00' title="Direct, $ per cwt" />
-  <BigValue data={direct_latest} value=difference fmt='+$#,##0.00;-$#,##0.00' title="Direct minus auction" />
-</KMStats>
-
-[Compare direct and auction prices by class and weight](/direct-vs-auction)
-
-## Hay prices
-
-Kansas direct hay sales. Hay is reported weekly or every other week, so the comparison is to the previous report. Week of <Value data={hay_latest} column=week fmt='mmm d, yyyy' />
+Week of <Value data={latest} column=week fmt='mmm d, yyyy' />
 
 <KMStats>
-  <BigValue data={hay_latest} value=price fmt='$#,##0' title="Alfalfa, Good, $ per ton" />
-  <BigValue data={hay_latest} value=change fmt='+0.0%;-0.0%' title="vs. previous report" />
+  <BigValue data={latest} value=price fmt='$#,##0.00' title="Price per cwt (100 lb)" />
+  <BigValue data={latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. year ago" />
 </KMStats>
 
-[See what hay costs against the value of weight gain on Backgrounding Economics](/backgrounding-economics)
+## Seasonal comparison: {inputs.weight.label} {inputs.class.value}
 
-## Drought
+This chart shows one line per year, with the current year being the darkest.
 
-The share of Kansas in moderate drought or worse. Week of <Value data={drought_latest} column=week fmt='mmm d, yyyy' />
+<KMLineChart
+  data={seasonal}
+  x=week_of_year
+  y=avg_price
+  series=yr
+  handleMissing=connect
+  xFmt='0'
+  xAxisTitle="Week of year (1 = first week of January)"
+  yFmt='$#,##0'
+  yAxisTitle="$ per cwt (100 lb)"
+  colorPalette={['#8fb890', '#69a06d', '#458a4d', '#2c6b38', '#17432a']}
+/>
+
+## Heifer discount to steers: {inputs.weight.label}
+
+Heifers usually sell for less than steers of the same weight. A shrinking discount often shows up when producers are keeping heifers back to rebuild their herd. This chart follows the Weight class selector above but ignores the Class selector.
+
+<KMLineChart
+  data={heifer_spread}
+  x=week
+  y=heifer_discount
+  yFmt='0%'
+  yAxisTitle="Heifer discount (% below steers)"
+  colorPalette={['#2f7d3c']}
+/>
+
+## Price by weight class
+
+Average auction price for each weight class, weighted by how many head sold. Lighter calves bring more per cwt. Special lots (fancy, unweaned, thin-fleshed) are left out.
+
+<KMLineChart
+  data={price_trend}
+  x=week
+  y=avg_price
+  series=weight_class
+  yFmt='$#,##0'
+  yAxisTitle="$ per cwt (100 lb)"
+  colorPalette={['#2f7d3c', '#e8843e', '#3f8fc4', '#8f3d56']}
+/>
+
+## Auction volume: feeder cattle
+
+Feeder cattle are young cattle, usually weaned calves and yearlings, sold to be fed to a heavier weight before slaughter. This chart shows the total number of head of feeder cattle sold across the reporting Kansas auctions that week. Slaughter and replacement cattle are reported separately and are not included here.
 
 <KMStats>
-  <BigValue data={drought_latest} value=in_drought fmt='0.0%' title="In drought (D1 or worse)" />
-  <BigValue data={drought_latest} value=vs_year_ago fmt='+0.0" pts";-0.0" pts"' title="vs. year ago" />
+  <BigValue data={volume_latest} value=receipts fmt='#,##0' title="Head sold, latest week" />
+  <BigValue data={volume_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
+  <BigValue data={volume_latest} value=yoy_change fmt='+0.0%;-0.0%' title="vs. same week last year" />
 </KMStats>
 
-[See how drought lines up with hay and cattle prices](/drought-market-conditions)
+<KMLineChart
+  data={volume_trend}
+  x=week
+  y=head_sold
+  series=period
+  yAxisTitle="Head sold"
+  seriesColors={{ 'This year': '#e8843e', 'Same week last year': '#66c27a' }}
+/>
+
+## Data table
+
+<DataTable data={price_trend} rows=12 search=true>
+  <Column id=week fmt='yyyy-mm-dd' />
+  <Column id=weight_class />
+  <Column id=avg_price fmt='$#,##0.00' title="$ per cwt (100 lb)" />
+</DataTable>
 
 <!-- Queries: kept at the bottom so the page layout reads top to bottom. -->
 
-```sql steer_latest
-with weekly as (
-  select
-    cast(report_begin_date as date) as week,
-    sum(avg_price * head_count) / sum(head_count) as price
-  from supabase_ag_pipeline.raw_mmn_1895
-  where commodity = 'Feeder Cattle'
-    and class = 'Steers'
-    and price_unit = 'Per Cwt'
-    and lot_desc = 'None'
-    and avg_weight >= 500
-    and avg_weight < 600
-  group by 1
-  having sum(head_count) > 0
+```sql weekly
+select
+  cast(report_begin_date as date) as week,
+  class,
+  cast(floor(avg_weight / 100) * 100 as integer) as weight_lo,
+  concat(
+    cast(cast(floor(avg_weight / 100) * 100 as integer) as varchar), '-',
+    cast(cast(floor(avg_weight / 100) * 100 as integer) + 100 as varchar), ' lb'
+  ) as weight_class,
+  sum(head_count) as head,
+  sum(avg_price * head_count) / sum(head_count) as avg_price
+from supabase_ag_pipeline.raw_mmn_1895
+where commodity = 'Feeder Cattle'
+  and class in ('Steers', 'Heifers')
+  and price_unit = 'Per Cwt'
+  and lot_desc = 'None'
+  and avg_weight >= 400
+  and avg_weight < 800
+group by all
+having sum(head_count) > 0
+```
+
+```sql latest
+with picked as (
+  select week, weight_class, avg_price
+  from ${weekly}
+  where class = '${inputs.class.value}' and weight_lo = cast('${inputs.weight.value}' as integer)
 ),
-newest as (select max(week) as week from weekly)
+last_week as (select max(week) as week from picked)
 select
   cur.week,
-  cur.price,
-  cur.price / prev.price - 1 as wow_change
-from weekly cur
-join newest using (week)
-left join weekly prev on prev.week = cur.week - interval 7 day
+  cur.avg_price as price,
+  cur.avg_price / prev.avg_price - 1 as wow_change,
+  cur.avg_price / yr.avg_price - 1 as yoy_change
+from picked cur
+join last_week using (week)
+left join picked prev on prev.week = cur.week - interval 7 day
+left join picked yr on yr.week = cur.week - interval 364 day
 ```
 
-```sql direct_latest
--- Same rules as the Direct vs. Auction page. Each direct week (a Monday) is paired with the
--- auction week that began in the seven days up to it.
-with auction as (
-  select
-    cast(report_begin_date as date) as week,
-    sum(avg_price * head_count) / sum(head_count) as price
-  from supabase_ag_pipeline.raw_mmn_1895
-  where commodity = 'Feeder Cattle'
-    and class = 'Steers'
-    and price_unit = 'Per Cwt'
-    and lot_desc = 'None'
-    and avg_weight >= 800
-    and avg_weight < 900
-    and head_count > 0
-  group by 1
-),
-direct as (
-  select
-    cast(report_begin_date as date) as week,
-    sum(wtd_avg_price * head_count) / sum(head_count) as price
-  from supabase_ag_pipeline.raw_mmn_3097_details
-  where commodity = 'Feeder Cattle'
-    and class = 'Steers'
-    and price_unit = 'Per Cwt'
-    and lot_desc = 'None'
-    and purchase_type = 'Cash'
-    and delivery_month = 'Current'
-    and wtd_avg_wt >= 800
-    and wtd_avg_wt < 900
-    and head_count > 0
-  group by 1
-)
+```sql price_trend
+select week, weight_class, avg_price
+from ${weekly}
+where class = '${inputs.class.value}'
+order by week, weight_class
+```
+
+```sql seasonal
 select
-  auction.week,
-  auction.price as auction_price,
-  direct.price as direct_price,
-  direct.price - auction.price as difference
-from auction
-join direct on direct.week between auction.week and auction.week + interval 6 day
-order by auction.week desc
-limit 1
+  -- week_of_year lines the years up: week 1 is Jan 1-7, week 2 is Jan 8-14, and so on.
+  cast(floor((dayofyear(week) - 1) / 7) + 1 as integer) as week_of_year,
+  cast(year(week) as varchar) as yr,
+  min(week) as week,
+  avg(avg_price) as avg_price
+from ${weekly}
+where class = '${inputs.class.value}'
+  and weight_lo = cast('${inputs.weight.value}' as integer)
+  and year(week) >= (select max(year(week)) from ${weekly}) - 4
+group by 1, 2
+order by yr, week_of_year
 ```
 
-```sql hay_latest
-with weekly as (
-  select
-    cast(report_begin_date as date) as week,
-    sum(wtd_avg_price * quantity) / sum(quantity) as price
-  from supabase_ag_pipeline.raw_mmn_2885_details
-  where class = 'Alfalfa'
-    and quality = 'Good'
-    and package = 'Large Square 3x4'
-    and price_unit = 'Per Ton'
-    and sale_type in ('Trade', 'Contract (Trade)')
-    and quantity > 0
-    and wtd_avg_price is not null
-  group by 1
-),
-ordered as (
-  select week, price, lag(price) over (order by week) as prev_price
-  from weekly
-)
-select week, price, price / prev_price - 1 as change
-from ordered
+```sql heifer_spread
+select s.week, 1 - h.avg_price / s.avg_price as heifer_discount
+from ${weekly} s
+join ${weekly} h on h.week = s.week and h.weight_lo = s.weight_lo
+where s.class = 'Steers' and h.class = 'Heifers' and s.weight_lo = cast('${inputs.weight.value}' as integer)
+order by s.week
+```
+
+```sql volume
+select
+  cast(report_begin_date as date) as week,
+  max(receipts) as receipts,
+  max(receipts_week_ago) as receipts_week_ago,
+  max(receipts_year_ago) as receipts_year_ago
+from supabase_ag_pipeline.raw_mmn_1895
+where commodity = 'Feeder Cattle' and receipts is not null
+group by 1
+```
+
+```sql volume_latest
+select
+  week,
+  receipts,
+  receipts / nullif(receipts_week_ago, 0) - 1 as wow_change,
+  receipts / nullif(receipts_year_ago, 0) - 1 as yoy_change
+from ${volume}
 order by week desc
 limit 1
 ```
 
-```sql drought_latest
-with d as (
-  select cast(map_date as date) as week, d1_pct
-  from supabase_ag_pipeline.raw_usdm_kansas
-),
-newest as (select max(week) as week from d)
-select
-  cur.week,
-  cur.d1_pct / 100 as in_drought,
-  cur.d1_pct - yr.d1_pct as vs_year_ago
-from d cur
-join newest using (week)
-left join d yr on yr.week = cur.week - interval 364 day
+```sql volume_trend
+select week, 'This year' as period, receipts as head_sold
+from ${volume}
+where week > (select max(week) from ${volume}) - interval 364 day
+union all
+select week, 'Same week last year' as period, receipts_year_ago as head_sold
+from ${volume}
+where week > (select max(week) from ${volume}) - interval 364 day
+order by week
 ```
