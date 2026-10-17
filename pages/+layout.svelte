@@ -63,7 +63,7 @@
 <EvidenceDefaultLayout
 	{data}
 	title="Kansas Cattle Data"
-	homePageName="Overview"
+	homePageName="Cattle Market Trends"
 	hideBreadcrumbs={true}
 	hideTOC={true}
 >
