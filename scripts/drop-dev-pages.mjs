@@ -32,7 +32,7 @@ sidebar_link: false
 
 <Redirect to="${HOME_REDIRECT}" />
 
-Taking you to [Market Trends](${HOME_REDIRECT}).
+Taking you to [Cattle Market Trends](${HOME_REDIRECT}).
 
 \`\`\`sql nothing
 select 1 as nothing

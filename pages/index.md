@@ -17,7 +17,7 @@ Kansas auction prices, from the weekly auction summary. Prices are quoted per cw
   <BigValue data={steer_latest} value=wow_change fmt='+0.0%;-0.0%' title="vs. prior week" />
 </KMStats>
 
-[See the full price history on Market Trends](/market-trends)
+[See the full price history on Cattle Market Trends](/market-trends)
 
 ## Direct cattle sales
 
